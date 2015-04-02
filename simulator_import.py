@@ -4,7 +4,6 @@ import sys
 # Provide directory paths for necessary imports
 lib_paths =\
     [
-        os.path.abspath('./optimizers/'),
         os.path.abspath('./trading_algorithms/')
     ]
 
