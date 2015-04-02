@@ -1,0 +1,3 @@
+
+class TradingAlgorithm(object):
+    pass
