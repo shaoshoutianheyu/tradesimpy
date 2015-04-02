@@ -1,6 +1,5 @@
 {
   "opt_method"      : "grid_search",
-  "strategy_type"   : "divergence",
   "strategy_name"   : "ma_cross",
   "start_date"      : "2013-01-01",
   "end_date"        : "2015-01-31",
