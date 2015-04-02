@@ -1,17 +1,15 @@
 {
-  "opt_method"      : "grid search",
-  "asset_count"     : "single",
-  "strategy_type"   : "watermark",
-  "strategy_name"   : "sobel",
+  "opt_method"      : "grid_search",
+  "strategy_type"   : "divergence",
+  "strategy_name"   : "ma_cross",
   "start_date"      : "2013-01-01",
   "end_date"        : "2015-01-31",
   "in_sample_days"  : "252",
   "out_sample_days" : "63",
   "tickers"         : ["SPY"],
   "opt_params"      : {
-                        "filter_sigma"  : [1, 2, 2],
                         "open_long"     : [0, 2, 3],
-                        "close_long"    : [-2, 0, 3],
+                        "close_long"    : [0, 2, 3],
                         "open_short"    : [],
                         "close_short"   : []
                       }
