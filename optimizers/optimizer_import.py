@@ -5,9 +5,7 @@ import sys
 lib_paths =\
     [
         os.path.abspath('../'),
-        os.path.abspath('../trading_algorithms/watermark/'),
-        os.path.abspath('../trading_algorithms/updown/'),
-        os.path.abspath('../trading_algorithms/divergence/')
+        os.path.abspath('../trading_algorithms/')
     ]
 
 for lib_path in lib_paths:

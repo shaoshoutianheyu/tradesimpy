@@ -10,13 +10,15 @@ class GridSearchOptimizer(Optimizer):
     ind_win_fudge_factor = 5
 
     def __init__(self, trading_algo, param_spaces, tickers):
-        super(GridSearchOptimizer, self).__init__(trading_algo, param_spaces, tickers)
+    # def __init__(self):
+        # super(GridSearchOptimizer, self).__init__(trading_algo, param_spaces, tickers)
+        super(GridSearchOptimizer, self).__init__()
 
         # Data members
-        self.param_sets = self.get_param_sets(self.param_spaces)
-        self.num_param_sets = len(self.param_sets)
+        # self.param_sets = self.get_param_sets(self.param_spaces)
+        # self.num_param_sets = len(self.param_sets)
 
-    def run(self, start_date, end_date):
+    def run(self, trading_algo, start_date, end_date):
         all_results = list()
 
         # Adjust the date range to approximately accommodate for indicator window length
