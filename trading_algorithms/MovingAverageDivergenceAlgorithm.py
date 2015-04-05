@@ -1,17 +1,25 @@
-import TradingAlgorithm
-import pandas as pd
+from TradingAlgorithm import TradingAlgorithm
 
 
 # TODO: Allow trading of more than one ticker
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
+# class MovingAverageDivergenceAlgorithm(object):
     def __init__(self, long_only, tickers, params):
         super(MovingAverageDivergenceAlgorithm, self).__init__(long_only, tickers, params)
+
+        # self.long_only = long_only
+        # self.tickers = tickers
+        # self.params = params
+        # self.is_open = False
 
         self.ma_long_window = 100
         self.ma_short_window = 20
 
         # Required property by all strategies
         self.req_hist_data_cnt = self.ma_long_window
+
+    # def set_parameters(self, params):
+    #     self.params = params
 
     def determine_trade_decision(self, data):
         # Compute moving average difference

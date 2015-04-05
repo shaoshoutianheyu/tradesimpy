@@ -5,7 +5,7 @@ from simulator_import import *
 
 
 class Simulator(object):
-    def __init__(self, trading_algo, start_date, end_date):
+    def __init__(self, trading_algo, start_date, end_date, data):
         # Determine preceding data needed for trading algorithm
 
 
@@ -17,6 +17,7 @@ class Simulator(object):
     def run(self):
         # Simulate trading environment
 
+        # trade_dec = trading_algo.determine_trade_decision(data)
 
         pass
 
