@@ -2,7 +2,7 @@
   "opt_method"      : "grid_search",
   "algo_name"       : "ma_div",
   "position_type"   : "long_only",
-  "start_date"      : "2013-01-01",
+  "start_date"      : "2014-01-01",
   "end_date"        : "2015-01-31",
   "in_sample_days"  : "252",
   "out_sample_days" : "63",

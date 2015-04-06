@@ -1,25 +1,149 @@
+from simulator_import import *
+import math as m
 import numpy as np
 import pandas as pd
-from simulator_import import *
-# import simulator_import
+from pprint import pprint
 
 
 class Simulator(object):
-    def __init__(self, trading_algo, start_date, end_date, data):
-        # Determine preceding data needed for trading algorithm
+    def __init__(self, trading_algo, data, capital_base):
+        self.trading_algo = trading_algo
+        self.data = data
+        self.capital_base = capital_base
+        self.start_dates = dict()
 
+        # Determine trading start dates for each ticker
+        for ticker in self.trading_algo.tickers:
+            self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
 
-        # Get financial time series data from Yahoo
+        # TODO: Make this more flexible for multiple tickers!
+        self.dates = data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
 
-
-        pass
+        # Initialize results per simulation structure
+        self.sim_results = {'Max Drawdown': 0.0}
 
     def run(self):
-        # Simulate trading environment
+        algo_window_length = self.trading_algo.hist_window_length
 
-        # trade_dec = trading_algo.determine_trade_decision(data)
+        # Intialize daily results structures
+        portfolio_value = dict()
+        p_n_l = dict()
+        returns = dict()
+        transactions = dict()
+        invested_amount = dict()
+        cash_amount = dict()
+        commissions = dict()
 
-        pass
+        # Initialize simulation results helper variables
+        algo_data = dict()
+        purchased_shares = dict()
+        prev_portfolio_value = self.capital_base
+        prev_cash_amount = self.capital_base
+        prev_invested_amount = 0.0
+        global_high = self.capital_base
+        local_low = 0.0
+
+        # Iterate over all trading days
+        for date in self.dates:
+            cash_amount[date] = 0.0
+            invested_amount[date] = 0.0
+            commissions[date] = 0.0
+            transactions[date] = dict()
+
+            for ticker in self.trading_algo.tickers:
+                algo_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
+
+            # Determine the trade decision for entire portfolio
+            trade_desc = self.trading_algo.determine_trade_decision(algo_data)
+
+            # Trade off of all trade decisions
+            if len(trade_desc) != 0:
+                for key, value in trade_desc.iteritems():
+                    if value['position'] == 0:  # Close position
+                        # Mark the portfolio to market
+                        current_invested_amount = 0.0
+                        for k, v in purchased_shares.iteritems():
+                            current_invested_amount += v*self.data[key].loc[date, 'Open']
+
+                        # Determine how many shares to purchase
+                        # TODO: Introduce slippage here, set from config file
+                        share_price = self.data[key].loc[date, 'Open']
+
+                        # Record commission
+                        # TODO: Set commission per trade from config file
+                        commission = 1.0
+                        commissions[date] += commission
+
+                        # Sell shares for cash
+                        cash_amount[date] = prev_cash_amount + purchased_shares[key]*share_price - commission
+
+                        # End of day invested amount
+                        invested_amount[date] = current_invested_amount - purchased_shares[key]*share_price
+
+                        # Record transaction
+                        transactions[date][key] = {
+                            'position': 0,
+                            'share_count': purchased_shares[key],
+                            'share_price': share_price
+                        }
+
+                        # Remove purchased record
+                        del purchased_shares[key]
+
+                    elif value['position'] == 1:  # Open long position
+                        # Determine how many shares to purchase
+                        # TODO: Introduce slippage here, set from config file
+                        share_price = self.data[key].loc[date, 'Open']
+                        purchased_shares[key] = m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
+
+                        # Record commission
+                        # TODO: Set commission per trade from config file
+                        commission = 1.0
+                        commissions[date] += commission
+
+                        # Purchase shares using cash
+                        cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - commission
+
+                        # End of day invested amount
+                        invested_amount[date] =\
+                            prev_invested_amount + purchased_shares[key]*self.data[key].loc[date, 'Close']
+
+                        # Record transaction
+                        transactions[date][key] = {
+                            'position': 1,
+                            'share_count': purchased_shares[key],
+                            'share_price': share_price
+                        }
+
+                    elif trade_desc['position'] == -1:  # Open short position
+                        pass
+            else:  # No trades, mark portfolio to market
+                cash_amount[date] = prev_cash_amount
+
+                # Determine current invested amount
+                # print purchased_shares
+                if len(purchased_shares) != 0:
+                    for key, value in purchased_shares.iteritems():
+                        invested_amount[date] += value*self.data[key].loc[date, 'Close']
+
+            # Record more trade stats
+            portfolio_value[date] = cash_amount[date] + invested_amount[date]
+            p_n_l[date] = portfolio_value[date] - prev_portfolio_value
+            returns[date] = (portfolio_value[date] / prev_portfolio_value) - 1.0
+
+            # prev_date = date
+            prev_cash_amount = cash_amount[date]
+            prev_invested_amount = invested_amount[date]
+            prev_portfolio_value = portfolio_value[date]
+
+            print 'Date: %s, Portfolio: %f, Cash: %f, Invested: %f, Transactions: %r'\
+                  % (date, portfolio_value[date], cash_amount[date], invested_amount[date], transactions[date])
+
+        # Create data frame out of trade stats
+        # TODO: Create data frame from portfolio stat dictionaries
+        result = None #pd.DataFrame.from_dict()
+
+        return result
 
     def record_performance(self):
         pass
