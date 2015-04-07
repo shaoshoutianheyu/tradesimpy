@@ -121,7 +121,6 @@ class Simulator(object):
                 cash_amount[date] = prev_cash_amount
 
                 # Determine current invested amount
-                # print purchased_shares
                 if len(purchased_shares) != 0:
                     for key, value in purchased_shares.iteritems():
                         invested_amount[date] += value*self.data[key].loc[date, 'Close']
@@ -136,12 +135,17 @@ class Simulator(object):
             prev_invested_amount = invested_amount[date]
             prev_portfolio_value = portfolio_value[date]
 
-            print 'Date: %s, Portfolio: %f, Cash: %f, Invested: %f, Transactions: %r'\
-                  % (date, portfolio_value[date], cash_amount[date], invested_amount[date], transactions[date])
-
         # Create data frame out of trade stats
-        # TODO: Create data frame from portfolio stat dictionaries
-        result = None #pd.DataFrame.from_dict()
+        result = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
+        result['Cash'] = pd.Series(cash_amount.values(), index=cash_amount.keys())
+        result['Invested'] = pd.Series(invested_amount.values(), index=invested_amount.keys())
+        result['PnL'] = pd.Series(p_n_l.values(), index=p_n_l.keys())
+        result['Return'] = pd.Series(returns.values(), index=returns.keys())
+        result['Commission'] = pd.Series(commissions.values(), index=commissions.keys())
+        result['Transactions'] = pd.Series(transactions.values(), index=transactions.keys())
+        result = result.sort_index()
+
+        print result
 
         return result
 
