@@ -36,6 +36,7 @@ class Simulator(object):
         prev_portfolio_value = self.capital_base
         prev_cash_amount = self.capital_base
         prev_invested_amount = 0.0
+        max_drawdown = 0.0
         global_high = self.capital_base
         local_low = 0.0
 
@@ -138,6 +139,10 @@ class Simulator(object):
             elif portfolio_value[date] < local_low:
                 local_low = portfolio_value[date]
 
+                # Record max drawdown
+                if ((local_low / global_high) - 1) < max_drawdown:
+                    max_drawdown = (local_low / global_high) - 1
+
         # Create data frame out of daily trade stats
         daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
         daily_results['Cash'] = pd.Series(cash_amount.values(), index=cash_amount.keys())
@@ -156,7 +161,7 @@ class Simulator(object):
 
         # Create dictionary out of period stats
         period_results = {
-            'Max Drawdown': (local_low / global_high) - 1,
+            'Max Drawdown': max_drawdown,
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
             'Sortino Ratio': annual_avg_return / annual_semi_std_dev,
             # 'Information Ratio': 0.0,
@@ -164,9 +169,7 @@ class Simulator(object):
                 (daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]) ** (1 / years_traded) - 1,
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,
-            'Total Trade Count': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),
-            'Annual Trade Count':
-                m.floor(daily_results['Transactions'].where(daily_results['Transactions'] != {}).count() / years_traded)
+            'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),
         }
 
         return period_results, daily_results

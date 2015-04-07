@@ -59,16 +59,16 @@ if __name__ == '__main__':
     # Create and run optimizer
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
     results = optimizer.run(trading_algo, start_date, end_date)
-    pprint(results)
 
     # Sort optimization results
     results.sort(
-        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Annual Trade Count'],
+        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
         ascending=[0, 0, 0, 0, 0],
         inplace=True)
+    pprint(results)
 
     # Output optimization results to csv file
     filename = '%s.%s.%s.csv' % (algo_name, opt_name, datetime.now())
-    results.to_csv(filename)
+    results.to_csv(filename, index=False)
 
     print 'Finished optimization!'
