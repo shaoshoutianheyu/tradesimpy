@@ -1,4 +1,3 @@
-
 class TradingAlgorithm(object):
     def __init__(self, long_only, tickers, params):
         # Data members
@@ -13,3 +12,6 @@ class TradingAlgorithm(object):
 
     def set_parameters(self, params):
         self.params = params
+
+        for ticker in self.tickers:
+            self.is_open[ticker] = False

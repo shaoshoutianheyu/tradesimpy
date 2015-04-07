@@ -1,37 +1,15 @@
 from optimizer_import import *
 import trading_algorithms.TradingAlgorithmFactory as taf
 import OptimizerFactory as of
-import numpy as np
 import json
-from datetime import datetime, date
-
+import csv
+from datetime import datetime
+from pprint import pprint
 
 class Optimizer(object):
     def __init__(self, param_spaces):
         # Data members
         self.param_spaces = param_spaces
-
-    @staticmethod
-    def extract_scenario_stats(self, params, results):
-        record = dict()
-
-        # Save parameters
-        record['params'] = params
-
-        # Save final portfolio value
-        record['portfolio_value'] = results.portfolio_value.values[-1]
-
-        # Save total number of positions
-        tradeCount = 0
-        for v in results.transactions.values:
-            if v:
-                tradeCount += 1
-        record['position_count'] = np.ceil(tradeCount / 2.0)
-
-        # Save Sharpe ratio
-        record['sharpe_ratio'] = (np.mean(results.returns.values) / np.std(results.returns.values)) * np.sqrt(252)
-
-        return record
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -82,5 +60,13 @@ if __name__ == '__main__':
     # Create and run optimizer
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
     results = optimizer.run(trading_algo, start_date, end_date)
+    pprint(results)
+
+    # Output optimization results to csv file
+    filename = '%s.%s.%s.csv' % (algo_name, opt_name, datetime.now())
+    with open(filename, 'wb') as f:
+        dict_writer = csv.DictWriter(f, results[0].keys())
+        dict_writer.writeheader()
+        dict_writer.writerows(results)
 
     print 'Finished optimization!'

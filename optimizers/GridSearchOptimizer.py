@@ -3,9 +3,7 @@ import Simulator as sim
 import DataImport
 import itertools
 import numpy as np
-import pandas as pd
 from pandas.tseries.offsets import BDay
-from pprint import pprint
 
 
 class GridSearchOptimizer(Optimizer):
@@ -19,7 +17,7 @@ class GridSearchOptimizer(Optimizer):
         self.num_param_sets = len(self.param_sets)
 
     def run(self, trading_algo, start_date, end_date):
-        all_results = list()
+        results = list()
 
         # Get the trading algorithm's required window length
         req_cnt = trading_algo.hist_window_length
@@ -34,7 +32,6 @@ class GridSearchOptimizer(Optimizer):
         for ticker in trading_algo.tickers:
             start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
             data[ticker] = data[ticker][start_idx:]
-            # print data[ticker]
 
         # Simulate all trading scenarios and save results
         for params in self.param_sets:
@@ -46,18 +43,14 @@ class GridSearchOptimizer(Optimizer):
             trading_algo.set_parameters(params=params)
 
             # Simulate the trading algorithm
-            # simulator = sim.Simulator(trading_algo, start_date, end_date, data)
             simulator = sim.Simulator(trading_algo=trading_algo, data=data, capital_base=10000)
-            results = simulator.run()
+            period_results, daily_results = simulator.run()
 
             # Record scenario parameters and statistics
-            all_results.append(results)
-            # all_results.append(self.extract_scenario_stats(params, results.ix[self.windowLength:]))
+            period_results['Params'] = params
+            results.append(period_results)
 
-            print 'made it'
-            exit(0)
-
-        return all_results
+        return results
 
     # Generate parameter sets for each scenario
     def get_param_sets(self, param_spaces):
