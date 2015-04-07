@@ -3,7 +3,27 @@ import Simulator as sim
 import DataImport
 import itertools
 import numpy as np
+import pandas as pd
+import multiprocessing as mp
 from pandas.tseries.offsets import BDay
+from pprint import pprint
+
+
+def _simulation(sim_args):
+    # Extract simulation arguments
+    params, trading_algo, data = sim_args
+
+    print "Scenario parameters: %r" % (params)
+
+    # Simulate the trading algorithm with distinct parameters
+    trading_algo.set_parameters(params=params)
+    simulator = sim.Simulator(trading_algo=trading_algo, data=data, capital_base=10000)
+    period_results, daily_results = simulator.run()
+
+    # Append parameters to trading statistics
+    period_results['Params'] = params
+
+    return period_results
 
 
 class GridSearchOptimizer(Optimizer):
@@ -33,27 +53,22 @@ class GridSearchOptimizer(Optimizer):
             start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
             data[ticker] = data[ticker][start_idx:]
 
-        # Simulate all trading scenarios and save results
-        for params in self.param_sets:
-            print "\nScenario parameters:"
-            for key, value in params.iteritems():
-                print "    %s: %f" % (key, value)
+        # Prepare input data for running parallel simulations
+        simulation_args = itertools.izip(
+            self.param_sets,
+            itertools.repeat(trading_algo),
+            itertools.repeat(data),
+        )
 
-            # Set the trading algorithm's parameters
-            trading_algo.set_parameters(params=params)
+        # Simulate all trading scenarios in parallel
+        pool = mp.Pool(processes=(mp.cpu_count() - 2))
+        results = pool.map(func=_simulation, iterable=simulation_args)
 
-            # Simulate the trading algorithm
-            simulator = sim.Simulator(trading_algo=trading_algo, data=data, capital_base=10000)
-            period_results, daily_results = simulator.run()
-
-            # Record scenario parameters and statistics
-            period_results['Params'] = params
-            results.append(period_results)
-
-        return results
+        return pd.DataFrame(results)
 
     # Generate parameter sets for each scenario
-    def get_param_sets(self, param_spaces):
+    @staticmethod
+    def get_param_sets(param_spaces):
         discrete_param_spaces = list()
         param_names = list()
         param_sets = list()

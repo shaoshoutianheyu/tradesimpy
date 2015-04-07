@@ -152,6 +152,7 @@ class Simulator(object):
         annual_avg_return = daily_results['Return'].mean() * 252
         annual_std_dev = daily_results['Return'].std() * np.sqrt(252)
         annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] >= 0.0).std() * np.sqrt(252)
+        years_traded = ((self.dates[-1] - self.dates[0]).days / 365.0)
 
         # Create dictionary out of period stats
         period_results = {
@@ -159,11 +160,13 @@ class Simulator(object):
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
             'Sortino Ratio': annual_avg_return / annual_semi_std_dev,
             # 'Information Ratio': 0.0,
-            'CAGR': (daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]) **
-                    (1 / ((self.dates[-1] - self.dates[0]).days / 365.0)) - 1,
+            'CAGR':
+                (daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]) ** (1 / years_traded) - 1,
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,
-            'Trade Count': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count()
+            'Total Trade Count': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),
+            'Annual Trade Count':
+                m.floor(daily_results['Transactions'].where(daily_results['Transactions'] != {}).count() / years_traded)
         }
 
         return period_results, daily_results

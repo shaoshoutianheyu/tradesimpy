@@ -2,7 +2,6 @@ from optimizer_import import *
 import trading_algorithms.TradingAlgorithmFactory as taf
 import OptimizerFactory as of
 import json
-import csv
 from datetime import datetime
 from pprint import pprint
 
@@ -62,11 +61,14 @@ if __name__ == '__main__':
     results = optimizer.run(trading_algo, start_date, end_date)
     pprint(results)
 
+    # Sort optimization results
+    results.sort(
+        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Annual Trade Count'],
+        ascending=[0, 0, 0, 0, 0],
+        inplace=True)
+
     # Output optimization results to csv file
     filename = '%s.%s.%s.csv' % (algo_name, opt_name, datetime.now())
-    with open(filename, 'wb') as f:
-        dict_writer = csv.DictWriter(f, results[0].keys())
-        dict_writer.writeheader()
-        dict_writer.writerows(results)
+    results.to_csv(filename)
 
     print 'Finished optimization!'
