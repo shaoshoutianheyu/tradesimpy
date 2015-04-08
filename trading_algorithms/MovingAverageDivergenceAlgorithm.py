@@ -5,8 +5,8 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
     def __init__(self, long_only, tickers, params):
         super(MovingAverageDivergenceAlgorithm, self).__init__(long_only, tickers, params)
 
-        self.ma_long_window = 20
-        self.ma_short_window = 4
+        self.ma_long_window = 10
+        self.ma_short_window = 2
         self.long_over_short_cross = False
         self.short_over_long_cross = False
         self.prev_ma_long = 0.0
@@ -70,5 +70,9 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
 
             self.prev_ma_long = ma_long
             self.prev_ma_short = ma_short
+
+        # # Reset previous values
+        # self.prev_ma_long = 0.0
+        # self.prev_ma_short = 0.0
 
         return trade_decision

@@ -26,6 +26,7 @@ if __name__ == '__main__':
     opt_name = configData['opt_method'].lower()
     algo_name = configData['algo_name'].lower()
     position_type = configData['position_type'].lower()
+    capital_base = float(configData['capital_base'])
     tickers = configData['tickers']
     start_date = datetime.strptime(configData['start_date'], '%Y-%m-%d')
     end_date = datetime.strptime(configData['end_date'], '%Y-%m-%d')
@@ -36,6 +37,7 @@ if __name__ == '__main__':
     print 'Optimization method:     %s' % (opt_name)
     print 'Algorithm name:          %s' % (algo_name)
     print 'Position type:           %s' % (position_type)
+    print 'Capital base:            %s' % (capital_base)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'Ticker(s):'
@@ -60,11 +62,11 @@ if __name__ == '__main__':
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
     results = optimizer.run(trading_algo, start_date, end_date)
 
-    # Sort optimization results
-    results.sort(
-        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
-        ascending=[0, 0, 0, 0, 0],
-        inplace=True)
+    # # Sort optimization results
+    # results.sort(
+    #     columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
+    #     ascending=[0, 0, 0, 0, 0],
+    #     inplace=True)
     pprint(results)
 
     # Output optimization results to csv file

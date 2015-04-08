@@ -5,21 +5,40 @@ import pandas as pd
 
 
 class Simulator(object):
-    def __init__(self, trading_algo, data, capital_base):
+    def __init__(self, capital_base, trading_algo=None, data=None):
         self.trading_algo = trading_algo
         self.data = data
         self.capital_base = capital_base
         self.start_dates = dict()
 
-        # Determine trading start dates for each ticker
-        for ticker in self.trading_algo.tickers:
-            self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
+        if trading_algo is not None and data is not None:
+            # Determine trading start dates for each ticker
+            for ticker in self.trading_algo.tickers:
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
 
-        # TODO: Make this more flexible for multiple tickers!
-        self.dates = data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
+            # TODO: Make this more flexible for multiple tickers!
+            self.dates =\
+                data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
 
+    def run(self, capital_base=10000, trading_algo=None, data=None):
+        self.capital_base = capital_base
 
-    def run(self):
+        # Create trading algorithm if necessary
+        if trading_algo is not None:
+            self.trading_algo = trading_algo
+
+        # Load data if necessary
+        if data is not None:
+            self.data = data
+
+            # Determine trading start dates for each ticker
+            for ticker in self.trading_algo.tickers:
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
+
+            # TODO: Make this more flexible for multiple tickers!
+            self.dates =\
+                data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
+
         # Intialize daily results structures
         portfolio_value = dict()
         p_n_l = dict()
@@ -60,7 +79,7 @@ class Simulator(object):
                         # Mark the portfolio to market
                         current_invested_amount = 0.0
                         for k, v in purchased_shares.iteritems():
-                            current_invested_amount += v*self.data[key].loc[date, 'Open']
+                            current_invested_amount += v*self.data[k].loc[date, 'Open']
 
                         # Determine how many shares to purchase
                         # TODO: Introduce slippage here, set from config file
@@ -112,8 +131,31 @@ class Simulator(object):
                             'share_price': share_price
                         }
                     # TODO: Allow for short selling
-                    elif trade_desc['position'] == -1:  # Open short position
+                    elif value['position'] == -1:  # Open short position
                         pass
+                        # # Determine how many shares to purchase
+                        # # TODO: Introduce slippage here, set from config file
+                        # share_price = self.data[key].loc[date, 'Open']
+                        # purchased_shares[key] = -m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
+                        #
+                        # # Record commission
+                        # # TODO: Set commission per trade from config file
+                        # commission = 1.0
+                        # commissions[date] += commission
+                        #
+                        # # Purchase shares using cash
+                        # cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - commission
+                        #
+                        # # End of day invested amount
+                        # invested_amount[date] =\
+                        #     prev_invested_amount + purchased_shares[key]*self.data[key].loc[date, 'Close']
+                        #
+                        # # Record transaction
+                        # transactions[date][key] = {
+                        #     'position': -1,
+                        #     'share_count': purchased_shares[key],
+                        #     'share_price': share_price
+                        # }
             else:  # No trades, mark portfolio to market
                 cash_amount[date] = prev_cash_amount
 
@@ -157,9 +199,10 @@ class Simulator(object):
         annual_avg_return = daily_results['Return'].mean() * 252
         annual_std_dev = daily_results['Return'].std() * np.sqrt(252)
         annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] >= 0.0).std() * np.sqrt(252)
-        years_traded = ((self.dates[-1] - self.dates[0]).days / 365.0)
+        years_traded = (((self.dates[-1] - self.dates[0]).days + 1) / 365.0)
 
         # Create dictionary out of period stats
+        # TODO: Attach params from trading_algo
         period_results = {
             'Max Drawdown': max_drawdown,
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
@@ -170,6 +213,8 @@ class Simulator(object):
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,
             'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),
+            'Start Portfolio Value': daily_results['Portfolio Value'][0],
+            'End Portfolio Value': daily_results['Portfolio Value'][-1]
         }
 
         return period_results, daily_results

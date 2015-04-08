@@ -1,19 +1,22 @@
+from backtester_import import *
 import json
 import pandas as pd
+from pprint import pprint
 from pandas.tseries.offsets import BDay
-import exceptions as ex
-from backtester_import import *
-# from TradingAlgorithm import *
-from Optimizer import *
+import DataImport as di
+import Simulator as sim
+import trading_algorithms.TradingAlgorithmFactory as taf
+import optimizers.OptimizerFactory as of
 
 
 class Backtester(object):
-    def __init__(self, opt_name, algo_name, position_type, tickers, start_date, end_date, in_sample_day_cnt,
+    def __init__(self, opt_name, algo_name, long_only, capital_base, tickers, start_date, end_date, in_sample_day_cnt,
                  out_sample_day_cnt, opt_params, display_info=False):
         # Data members
         self.opt_name = opt_name
         self.algo_name = algo_name
-        self.position_type = position_type
+        self.long_only = long_only
+        self.capital_base = capital_base
         self.tickers = tickers
         self.start_date = start_date
         self.end_date = end_date
@@ -45,24 +48,21 @@ class Backtester(object):
                       (sp['out'][0].date(), sp['out'][1].date(), (sp['out'][1] - sp['out'][0]).days)
                 print
 
-        # Determine position type (long only or long-short)
-        if position_type == 'long_only':
-            long_only = True
-        else:
-            long_only = False
+        # TODO: Pull data required for all in-sample and out-of-sample periods
 
-        # Create trading algorithm
-        # self.trading_algo = TradingAlgorithm.create_trading_algo(algo_name)
-        self.trading_algo = self.create_trading_algo(algo_name=algo_name, long_only=long_only)
-
-        # Create optimizer
-        self.optimizer = Optimizer.create_optimizer(opt_name, opt_params, self.trading_algo)
-
-        if display_info:
-            # Display total number of optimizations per time step
-            print 'There will be %d distinct scenarios per optimization step\n' % (self.optimizer.num_param_sets)
+        # if display_info:
+        #     # Display total number of optimizations per time step
+        #     print 'There will be %d distinct scenarios per optimization step\n' % (self.optimizer.num_param_sets)
 
     def run(self):
+        results = list()
+        capital_base = self.capital_base
+
+        # Create trading algorithm, optimizer, and simulator
+        trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only, tickers=self.tickers)
+        optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
+        simulator = sim.Simulator(capital_base=capital_base)
+
         # Backtest trading algorithm using walk forward analysis
         for periods in self.sample_periods:
             in_start = periods['in'][0]
@@ -72,41 +72,53 @@ class Backtester(object):
 
             # Optimize over in-sample data
             print 'Starting in-sample optimization for dates %s to %s.\n' % (in_start.date(), in_end.date())
-            in_sample_results = self.optimizer.run(self.trading_algo, in_start, in_end)
+            in_sample_results = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
             print '\nFinished in-sample optimization for dates %s to %s.\n' % (in_start.date(), in_end.date())
-            # print in_sample_results
+
+            # Sort the results based on performance metrics and get parameters
+            params = in_sample_results.sort(
+                columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
+                ascending=[0, 0, 0, 0, 0]
+            )['Params'].head(1).values[0]
+
+            # Set trading algorithm's parameters
+            trading_algo.set_parameters(params)
+
+            # Get the trading algorithm's required window length
+            req_cnt = trading_algo.hist_window_length
+
+            # Adjust the date range to approximately accommodate for indicator window length
+            data_start_date = out_start - BDay(req_cnt + 5)
+
+            # Pull out-of-sample data
+            data = di.load_data(tickers=self.tickers, start=data_start_date, end=out_end.date(), adjusted=True)
 
             # Simulate over out-of-sample data
             print 'Starting out-of-sample simulation for dates %s to %s.\n' % (out_start.date(), out_end.date())
-
+            out_sample_results, junk = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
             print '\nFinished out-of-sample simulation for dates %s to %s.\n' % (out_start.date(), out_end.date())
 
+            # Keep track of the portfolio's value over time
+            capital_base = out_sample_results['End Portfolio Value']
+
             # Record results for later analysis
+            results.append(out_sample_results)
 
-
-            break
-
-    # TODO: Put this in a factory class
-    def create_trading_algo(self, algo_name, long_only):
-        if algo_name == 'ma_div':
-            return None
-        else:
-            # print 'ERROR: Unknown algo name %s' % (algo_name)
-            ex.AttributeError.message('ERROR: Unknown algo name %s' % (algo_name))
+        pprint(results)
 
     def create_sample_periods(self, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt):
         sample_periods = list()
 
         # Full sample period
-        startDateTime = pd.datetime.strptime(start_date, "%Y-%m-%d")
-        endDateTime = pd.datetime.strptime(end_date, "%Y-%m-%d")
+        start_datetime = pd.datetime.strptime(start_date, "%Y-%m-%d")
+        end_datetime = pd.datetime.strptime(end_date, "%Y-%m-%d")
 
         # Determine and store all sample periods
-        while (startDateTime + BDay(out_sample_day_cnt - 1)) <= endDateTime:
-            inStart = startDateTime - BDay(in_sample_day_cnt)
-            inEnd = startDateTime - BDay(1)
-            outStart = startDateTime
-            outEnd = startDateTime + BDay(out_sample_day_cnt - 1)
+        while (start_datetime + BDay(out_sample_day_cnt - 1)) <= end_datetime:
+            inStart = start_datetime - BDay(in_sample_day_cnt)
+            inEnd = start_datetime - BDay(1)
+            outStart = start_datetime
+            outEnd = start_datetime + BDay(out_sample_day_cnt - 1)
 
             sample_periods.append(
                 {
@@ -116,14 +128,14 @@ class Backtester(object):
             )
 
             # Update new start date
-            startDateTime = startDateTime + BDay(out_sample_day_cnt)
+            start_datetime = start_datetime + BDay(out_sample_day_cnt)
 
         # Be sure to include any remaining days in full sample period as a sample period
-        if startDateTime < endDateTime:
+        if start_datetime < end_datetime:
             sample_periods.append(
                 {
-                    'in':   [startDateTime - BDay(in_sample_day_cnt), startDateTime - BDay(1)],
-                    'out':  [startDateTime, endDateTime]
+                    'in':   [start_datetime - BDay(in_sample_day_cnt), start_datetime - BDay(1)],
+                    'out':  [start_datetime, end_datetime]
                 }
             )
 
@@ -145,6 +157,7 @@ if __name__ == '__main__':
     opt_name = configData['opt_method'].lower()
     algo_name = configData['algo_name'].lower()
     position_type = configData['position_type'].lower()
+    capital_base = float(configData['capital_base'])
     tickers = configData['tickers']
     start_date = configData['start_date']
     end_date = configData['end_date']
@@ -157,6 +170,7 @@ if __name__ == '__main__':
     print 'Optimization method:     %s' % (opt_name)
     print 'Algorithm name:          %s' % (algo_name)
     print 'Position type:           %s' % (position_type)
+    print 'Capital base:            %s' % (capital_base)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'In-sample day count:     %s' % (in_sample_day_cnt)
@@ -170,10 +184,17 @@ if __name__ == '__main__':
     print '*********************************************************'
     print
 
+    # Determine position type (long only or long-short)
+    if position_type == 'long_only':
+        long_only = True
+    else:
+        long_only = False
+
     # Initialize and run backtester
     backtester = Backtester(opt_name=opt_name,
                             algo_name=algo_name,
-                            position_type=position_type,
+                            long_only=long_only,
+                            capital_base=capital_base,
                             tickers=tickers,
                             start_date=start_date,
                             end_date=end_date,
@@ -181,4 +202,4 @@ if __name__ == '__main__':
                             out_sample_day_cnt=out_sample_day_cnt,
                             opt_params=opt_params,
                             display_info=True)
-    backtester.run()
+    results = backtester.run()

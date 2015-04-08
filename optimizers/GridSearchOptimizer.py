@@ -17,7 +17,7 @@ def _simulation(sim_args):
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params)
-    simulator = sim.Simulator(trading_algo=trading_algo, data=data, capital_base=10000)
+    simulator = sim.Simulator(capital_base=100000, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
     # Append parameters to trading statistics
@@ -45,6 +45,10 @@ class GridSearchOptimizer(Optimizer):
         # Adjust the date range to approximately accommodate for indicator window length
         data_start_date = start_date - BDay(req_cnt + self.ind_win_fudge_factor)
 
+        print "data_start_date: %s" % (data_start_date)
+        print "start_date: %s" % (start_date)
+        print "end_date: %s" % (end_date)
+
         # Load daily adjusted close financial time series data
         data = DataImport.load_data(tickers=trading_algo.tickers, start=data_start_date, end=end_date, adjusted=True)
 
@@ -52,6 +56,28 @@ class GridSearchOptimizer(Optimizer):
         for ticker in trading_algo.tickers:
             start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
             data[ticker] = data[ticker][start_idx:]
+
+        # # Simulate all trading scenarios and save results
+        # for params in self.param_sets:
+        #     print "\nScenario parameters:"
+        #     for key, value in params.iteritems():
+        #         print "    %s: %f" % (key, value)
+        #
+        #     # Set the trading algorithm's parameters
+        #     trading_algo.set_parameters(params=params)
+        #
+        #     # Simulate the trading algorithm
+        #     simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
+        #     period_results, daily_results = simulator.run()
+        #
+        #     # pprint(daily_results)
+        #     # for t in daily_results['Transactions']:
+        #     #     print t
+        #     exit(1)
+        #
+        #     # Record scenario parameters and statistics
+        #     period_results['Params'] = params
+        #     results.append(period_results)
 
         # Prepare input data for running parallel simulations
         simulation_args = itertools.izip(
@@ -67,6 +93,7 @@ class GridSearchOptimizer(Optimizer):
         return pd.DataFrame(results)
 
     # Generate parameter sets for each scenario
+    # TODO: Build parameter sets based on the long_only and opt_params settings from config file
     @staticmethod
     def get_param_sets(param_spaces):
         discrete_param_spaces = list()
