@@ -1,6 +1,7 @@
 from backtester_import import *
 import json
 import pandas as pd
+import time
 from pprint import pprint
 from pandas.tseries.offsets import BDay
 import DataImport as di
@@ -71,9 +72,11 @@ class Backtester(object):
             out_end = periods['out'][1]
 
             # Optimize over in-sample data
-            print 'Starting in-sample optimization for dates %s to %s.\n' % (in_start.date(), in_end.date())
+            print 'Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date())
+            start_time = time.time()
             in_sample_results = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
-            print '\nFinished in-sample optimization for dates %s to %s.\n' % (in_start.date(), in_end.date())
+            end_time = time.time()
+            print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
             # Sort the results based on performance metrics and get parameters
             params = in_sample_results.sort(
@@ -94,9 +97,11 @@ class Backtester(object):
             data = di.load_data(tickers=self.tickers, start=data_start_date, end=out_end.date(), adjusted=True)
 
             # Simulate over out-of-sample data
-            print 'Starting out-of-sample simulation for dates %s to %s.\n' % (out_start.date(), out_end.date())
+            print 'Simulating algorithm for dates %s to %s.' % (out_start.date(), out_end.date())
+            start_time = time.time()
             out_sample_results, junk = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
-            print '\nFinished out-of-sample simulation for dates %s to %s.\n' % (out_start.date(), out_end.date())
+            end_time = time.time()
+            print 'Finished out-of-sample simulation %f seconds.\n' % (end_time - start_time)
 
             # Keep track of the portfolio's value over time
             capital_base = out_sample_results['End Portfolio Value']
@@ -203,3 +208,7 @@ if __name__ == '__main__':
                             opt_params=opt_params,
                             display_info=True)
     results = backtester.run()
+
+    print 'Finished backtesting!'
+
+    # TODO: Display statistics, plots, etc.

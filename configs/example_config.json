@@ -2,14 +2,15 @@
   "opt_method"      : "grid_search",
   "algo_name"       : "ma_div",
   "position_type"   : "long_only",
+  "capital_base"    : 10000,
   "start_date"      : "2014-01-01",
-  "end_date"        : "2015-01-31",
-  "in_sample_days"  : "252",
-  "out_sample_days" : "63",
+  "end_date"        : "2014-12-31",
+  "in_sample_days"  : "504",
+  "out_sample_days" : "126",
   "tickers"         : ["SPY"],
   "opt_params"      : {
-                        "open_long"     : [0, 2, 3],
-                        "close_long"    : [0, 2, 3],
+                        "open_long"     : [0, 5, 11],
+                        "close_long"    : [0, 5, 11],
                         "open_short"    : [],
                         "close_short"   : []
                       }

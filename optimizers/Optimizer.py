@@ -74,3 +74,5 @@ if __name__ == '__main__':
     results.to_csv(filename, index=False)
 
     print 'Finished optimization!'
+
+    # TODO: Display statistics, plots, etc.
