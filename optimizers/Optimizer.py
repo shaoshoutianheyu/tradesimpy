@@ -1,7 +1,12 @@
 from optimizer_import import *
 import trading_algorithms.TradingAlgorithmFactory as taf
 import OptimizerFactory as of
+import DataImport as di
 import json
+import time
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from datetime import datetime
 from pprint import pprint
 
@@ -60,19 +65,65 @@ if __name__ == '__main__':
 
     # Create and run optimizer
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
-    results = optimizer.run(trading_algo, start_date, end_date)
+    print 'Optimizing parameter set for dates %s to %s.' % (start_date, end_date)
+    start_time = time.time()
+    results = optimizer.run(trading_algo, start_date.date(), end_date.date())
+    end_time = time.time()
+    print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
-    # # Sort optimization results
-    # results.sort(
-    #     columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
-    #     ascending=[0, 0, 0, 0, 0],
-    #     inplace=True)
-    pprint(results)
+    # Sort optimization results
+    results.sort(
+        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
+        ascending=[0, 0, 0, 0, 0],
+        inplace=True)
 
-    # Output optimization results to csv file
+    # Pull benchmark data, scale, and get statistics for comparison analysis
+    benchmark_ticker = 'SPY'
+    benchmark = di.load_data([benchmark_ticker], start_date, end_date, adjusted=True)[benchmark_ticker]['Close']
+    benchmark *= (capital_base / benchmark[0])
+    benchmark_returns = (benchmark - benchmark.shift(1)) / benchmark.shift(1)
+    benchmark_avg_returns = benchmark_returns.mean() * 252
+    benchmark_std_dev = benchmark_returns.std() * np.sqrt(252)
+    benchmark_semi_std_dev = benchmark_returns.where(benchmark_returns < 0.0).std() * np.sqrt(252)
+    benchmark_sharpe = benchmark_avg_returns / benchmark_std_dev
+    benchmark_sortino = benchmark_avg_returns / benchmark_semi_std_dev
+
+    # print benchmark
+    # print benchmark_returns
+    # print benchmark_sharpe
+    # print benchmark_sortino
+    # exit(1)
+
+    # Display a plot of the top N scenarios' portfolio value from the sorted results
+    num_scenarios = 10
+    # port_value_series = pd.concat(list(benchmark), axis=0)
+    port_value_series = pd.DataFrame(benchmark)
+    for i in range(0, num_scenarios):
+        port_value_series[str(results.head(num_scenarios).iloc[i]['Params'])] =\
+            pd.Series(results.head(num_scenarios).iloc[i]['Portfolio Value'],
+                index=results.head(num_scenarios).iloc[i]['Portfolio Value'].keys())
+
+    plot = port_value_series.plot(title='Portfolio Value of Top %d Scenarios and Benchmark' % (num_scenarios),
+                                  legend=False,
+                                  colormap='rainbow')
+    plot.set_xlabel('Date')
+    plot.set_ylabel('Porfolio Value')
+    plot.legend(loc=2, prop={'size': 10})
+
+    # Output relevant optimization results to csv file
     filename = '%s.%s.%s.csv' % (algo_name, opt_name, datetime.now())
+    del results['Portfolio Value']
     results.to_csv(filename, index=False)
 
-    print 'Finished optimization!'
+    print 'Benchmark results:'
+    print 'Total Return: %f' % ((benchmark[-1] / benchmark[0]) - 1)
+    print 'Sharpe Ratio: %f' % (benchmark_sharpe)
+    print 'Sortino Ratio: %f' % (benchmark_sortino)
+    print 'Max Drawdown: %f' % (0.0)
+    print 'CAGR: %f\n' % ((benchmark[-1] / benchmark[0]) ** (1 / ((end_date - start_date).days / 365.0)) - 1)
 
-    # TODO: Display statistics, plots, etc.
+    print 'Top %d scenario results:' % (num_scenarios)
+    print results.head(num_scenarios)[
+        ['Params', 'Sharpe Ratio', 'Sortino Ratio', 'Total Return', 'Max Drawdown', 'CAGR', 'Total Trades']
+    ]
+    plt.show()

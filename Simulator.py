@@ -198,8 +198,9 @@ class Simulator(object):
         # Compute period statistics
         annual_avg_return = daily_results['Return'].mean() * 252
         annual_std_dev = daily_results['Return'].std() * np.sqrt(252)
-        annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] >= 0.0).std() * np.sqrt(252)
+        annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] < 0.0).std() * np.sqrt(252)
         years_traded = (((self.dates[-1] - self.dates[0]).days + 1) / 365.0)
+        total_return = daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]
 
         # Create dictionary out of period stats
         # TODO: Attach params from trading_algo
@@ -208,8 +209,8 @@ class Simulator(object):
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
             'Sortino Ratio': annual_avg_return / annual_semi_std_dev,
             # 'Information Ratio': 0.0,
-            'CAGR':
-                (daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]) ** (1 / years_traded) - 1,
+            'CAGR': (total_return) ** (1 / years_traded) - 1,
+            'Total Return': total_return - 1,
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,
             'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),

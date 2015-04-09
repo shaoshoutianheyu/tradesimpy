@@ -1,7 +1,7 @@
 import pandas.io.data as web
 
 
-def load_data(tickers, start, end, adjusted=False):
+def load_data(tickers, start, end, adjusted):
     data = web.DataReader(tickers, data_source='yahoo', start=start, end=end)
 
     if adjusted:

@@ -12,7 +12,6 @@ from pprint import pprint
 def _simulation(sim_args):
     # Extract simulation arguments
     params, trading_algo, data = sim_args
-
     # print "Scenario parameters: %r" % (params)
 
     # Simulate the trading algorithm with distinct parameters
@@ -20,8 +19,9 @@ def _simulation(sim_args):
     simulator = sim.Simulator(capital_base=100000, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
-    # Append parameters to trading statistics
+    # Append parameters to trading statistics and several time series
     period_results['Params'] = params
+    period_results['Portfolio Value'] = daily_results['Portfolio Value']
 
     return period_results
 
@@ -53,27 +53,26 @@ class GridSearchOptimizer(Optimizer):
             start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
             data[ticker] = data[ticker][start_idx:]
 
-        # Simulate all trading scenarios and save results
-        for params in self.param_sets:
-            print "\nScenario parameters:"
-            for key, value in params.iteritems():
-                print "    %s: %f" % (key, value)
-
-            # Set the trading algorithm's parameters
-            trading_algo.set_parameters(params=params)
-
-            # Simulate the trading algorithm
-            simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
-            period_results, daily_results = simulator.run()
-
-            # pprint(daily_results)
-            # for t in daily_results['Transactions']:
-            #     print t
-            exit(1)
-
-            # Record scenario parameters and statistics
-            period_results['Params'] = params
-            results.append(period_results)
+        # # Simulate all trading scenarios and save results
+        # for params in self.param_sets:
+        #     print "\nScenario parameters:"
+        #     for key, value in params.iteritems():
+        #         print "    %s: %f" % (key, value)
+        #
+        #     # Set the trading algorithm's parameters
+        #     trading_algo.set_parameters(params=params)
+        #
+        #     # Simulate the trading algorithm
+        #     simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
+        #     period_results, daily_results = simulator.run()
+        #
+        #     # Record scenario parameters and statistics
+        #     period_results['Params'] = params
+        #     period_results['Portfolio Value'] = daily_results['Portfolio Value']
+        #     results.append(period_results)
+        #
+        #     # print results[0]['Portfolio Value']
+        #     # exit(1)
 
         # Prepare input data for running parallel simulations
         simulation_args = itertools.izip(
