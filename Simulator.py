@@ -10,6 +10,9 @@ class Simulator(object):
         self.data = data
         self.capital_base = capital_base
         self.start_dates = dict()
+        self.portfolio_global_high = capital_base
+        self.portfolio_local_low = capital_base
+        self.max_drawdown = 0.0
 
         if trading_algo is not None and data is not None:
             # Determine trading start dates for each ticker
@@ -55,9 +58,9 @@ class Simulator(object):
         prev_portfolio_value = self.capital_base
         prev_cash_amount = self.capital_base
         prev_invested_amount = 0.0
-        max_drawdown = 0.0
-        global_high = self.capital_base
-        local_low = 0.0
+        # max_drawdown = 0.0
+        # portfolio_global_high = self.capital_base
+        # portfolio_local_low = self.capital_base
 
         # Iterate over all trading days
         for date in self.dates:
@@ -183,15 +186,15 @@ class Simulator(object):
                     portfolio_high += value*self.data[key].loc[date, 'High']
                     portfolio_low += value*self.data[key].loc[date, 'Low']
 
-                if portfolio_high > global_high:
-                    global_high = portfolio_high
-                    local_low = global_high
-                elif portfolio_low < local_low:
-                    local_low = portfolio_low
+                if portfolio_high > self.portfolio_global_high:
+                    self.portfolio_global_high = portfolio_high
+                    self.portfolio_local_low = self.portfolio_global_high
+                elif portfolio_low < self.portfolio_local_low:
+                    self.portfolio_local_low = portfolio_low
 
                     # Record max drawdown
-                    if ((local_low / global_high) - 1) < max_drawdown:
-                        max_drawdown = (local_low / global_high) - 1
+                    if ((self.portfolio_local_low / self.portfolio_global_high) - 1) < self.max_drawdown:
+                        self.max_drawdown = (self.portfolio_local_low / self.portfolio_global_high) - 1
 
         # Create data frame out of daily trade stats
         daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
@@ -210,13 +213,15 @@ class Simulator(object):
         years_traded = (((self.dates[-1] - self.dates[0]).days + 1) / 365.0)
         total_return = daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]
         cagr = total_return ** (1 / years_traded) - 1
+        sortino_ratio = float('NaN') if annual_semi_std_dev == 0 else annual_avg_return / annual_semi_std_dev
+        mar_ratio = float('NaN') if self.max_drawdown == 0 else -cagr / self.max_drawdown
 
         # Create dictionary out of period stats
         period_results = {
-            'Max Drawdown': -max_drawdown,
+            'Max Drawdown': -self.max_drawdown,
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
-            'Sortino Ratio': annual_avg_return / annual_semi_std_dev,
-            'MAR Ratio': -cagr / max_drawdown,
+            'Sortino Ratio': sortino_ratio,
+            'MAR Ratio': mar_ratio,
             # 'Information Ratio': 0.0,
             'CAGR': cagr,
             'Total Return': total_return - 1,

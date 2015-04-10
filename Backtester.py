@@ -1,5 +1,6 @@
 from backtester_import import *
 import json
+import numpy as np
 import pandas as pd
 import time
 from pprint import pprint
@@ -12,7 +13,7 @@ import optimizers.OptimizerFactory as of
 
 class Backtester(object):
     def __init__(self, opt_name, algo_name, long_only, capital_base, tickers, start_date, end_date, in_sample_day_cnt,
-                 out_sample_day_cnt, opt_params, display_info=False):
+                 out_sample_day_cnt, carry_over_trades, opt_params, display_info=False):
         # Data members
         self.opt_name = opt_name
         self.algo_name = algo_name
@@ -23,6 +24,7 @@ class Backtester(object):
         self.end_date = end_date
         self.in_sample_day_cnt = in_sample_day_cnt
         self.out_sample_day_cnt = out_sample_day_cnt
+        self.carry_over_trades = carry_over_trades
         self.opt_params = opt_params
         self.display_info = display_info
 
@@ -80,8 +82,12 @@ class Backtester(object):
 
             # Sort the results based on performance metrics and get parameters
             params = in_sample_results.sort(
-                columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
-                ascending=[0, 0, 0, 0, 0]
+                # columns=['Sharpe Ratio'],
+                # ascending=[False]
+                # columns=['Sortino Ratio'],
+                # ascending=[False]
+                columns=['MAR Ratio'],
+                ascending=[False]
             )['Params'].head(1).values[0]
 
             # Set trading algorithm's parameters
@@ -109,21 +115,17 @@ class Backtester(object):
             # Record results for later analysis
             results.append(out_sample_results)
 
-        pprint(results)
+        return results
 
     def create_sample_periods(self, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt):
         sample_periods = list()
 
-        # Full sample period
-        start_datetime = pd.datetime.strptime(start_date, "%Y-%m-%d")
-        end_datetime = pd.datetime.strptime(end_date, "%Y-%m-%d")
-
         # Determine and store all sample periods
-        while (start_datetime + BDay(out_sample_day_cnt - 1)) <= end_datetime:
-            inStart = start_datetime - BDay(in_sample_day_cnt)
-            inEnd = start_datetime - BDay(1)
-            outStart = start_datetime
-            outEnd = start_datetime + BDay(out_sample_day_cnt - 1)
+        while (start_date + BDay(out_sample_day_cnt - 1)) <= end_date:
+            inStart = start_date - BDay(in_sample_day_cnt)
+            inEnd = start_date - BDay(1)
+            outStart = start_date
+            outEnd = start_date + BDay(out_sample_day_cnt - 1)
 
             sample_periods.append(
                 {
@@ -133,14 +135,14 @@ class Backtester(object):
             )
 
             # Update new start date
-            start_datetime = start_datetime + BDay(out_sample_day_cnt)
+            start_date = start_date + BDay(out_sample_day_cnt)
 
         # Be sure to include any remaining days in full sample period as a sample period
-        if start_datetime < end_datetime:
+        if start_date < end_date:
             sample_periods.append(
                 {
-                    'in':   [start_datetime - BDay(in_sample_day_cnt), start_datetime - BDay(1)],
-                    'out':  [start_datetime, end_datetime]
+                    'in':   [start_date - BDay(in_sample_day_cnt), start_date - BDay(1)],
+                    'out':  [start_date, end_date]
                 }
             )
 
@@ -161,25 +163,27 @@ if __name__ == '__main__':
     # Read in config parameters
     opt_name = configData['opt_method'].lower()
     algo_name = configData['algo_name'].lower()
-    position_type = configData['position_type'].lower()
+    long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
     tickers = configData['tickers']
-    start_date = configData['start_date']
-    end_date = configData['end_date']
-    in_sample_day_cnt = int(configData['in_sample_days'])
-    out_sample_day_cnt = int(configData['out_sample_days'])
+    start_date = pd.datetime.strptime(configData['start_date'], "%Y-%m-%d")
+    end_date = pd.datetime.strptime(configData['end_date'], "%Y-%m-%d")
+    in_sample_day_cnt = configData['in_sample_days']
+    out_sample_day_cnt = configData['out_sample_days']
+    carry_over_trades = bool(configData['carry_over_trades'])
     opt_params = configData['opt_params']
 
     # Display inputted config parameters
     print '**********  BACKTEST CONFIGURATION PARAMETERS  **********'
     print 'Optimization method:     %s' % (opt_name)
     print 'Algorithm name:          %s' % (algo_name)
-    print 'Position type:           %s' % (position_type)
+    print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'In-sample day count:     %s' % (in_sample_day_cnt)
     print 'Out-of-sample day count: %s' % (out_sample_day_cnt)
+    print 'Carry over trades:       %s' % (carry_over_trades)
     print 'Ticker(s):'
     for ticker in tickers:
         print '                         %s' % (ticker)
@@ -188,12 +192,6 @@ if __name__ == '__main__':
         print '                         %s: %s' % (key, value)
     print '*********************************************************'
     print
-
-    # Determine position type (long only or long-short)
-    if position_type == 'long_only':
-        long_only = True
-    else:
-        long_only = False
 
     # Initialize and run backtester
     backtester = Backtester(opt_name=opt_name,
@@ -205,10 +203,29 @@ if __name__ == '__main__':
                             end_date=end_date,
                             in_sample_day_cnt=in_sample_day_cnt,
                             out_sample_day_cnt=out_sample_day_cnt,
+                            carry_over_trades=carry_over_trades,
                             opt_params=opt_params,
                             display_info=True)
     results = backtester.run()
+    # pprint(results)
 
-    print 'Finished backtesting!'
+    # TODO: Display benchmark results
 
-    # TODO: Display statistics, plots, etc.
+    # Compute backtest statistics
+    years_traded = ((end_date - start_date).days + 1) / 365.0
+    backtest_avg_sharpe =\
+        np.nansum([s['Sharpe Ratio'] for s in results]) / np.count_nonzero(~np.isnan([s['Sharpe Ratio'] for s in results]))
+    backtest_avg_sortino =\
+        np.nansum([s['Sortino Ratio'] for s in results]) / np.count_nonzero(~np.isnan([s['Sortino Ratio'] for s in results]))
+    backtest_total_return = results[-1]['End Portfolio Value'] / results[0]['Start Portfolio Value']
+    backtest_cagr = backtest_total_return ** (1 / years_traded) - 1
+    total_trades = np.sum([t['Total Trades'] for t in results])
+
+    print 'Backtest results:'
+    print 'Total Return:            %f' % (backtest_total_return - 1)
+    print 'CAGR:                    %f' % (backtest_cagr)
+    print 'Max Drawdown:            %f' % (results[-1]['Max Drawdown'])
+    print 'Average Sharpe Ratio:    %f' % (backtest_avg_sharpe)
+    print 'Average Sortino Ratio:   %f' % (backtest_avg_sortino)
+    print 'MAR Ratio:               %f' % (backtest_cagr / results[-1]['Max Drawdown'])
+    print 'Total Trades:            %d' % (total_trades)

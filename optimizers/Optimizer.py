@@ -30,8 +30,9 @@ if __name__ == '__main__':
     # Read in config parameters
     opt_name = configData['opt_method'].lower()
     algo_name = configData['algo_name'].lower()
-    position_type = configData['position_type'].lower()
+    long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
+    benchmark_ticker = configData['benchmark_ticker']
     tickers = configData['tickers']
     start_date = datetime.strptime(configData['start_date'], '%Y-%m-%d')
     end_date = datetime.strptime(configData['end_date'], '%Y-%m-%d')
@@ -41,9 +42,10 @@ if __name__ == '__main__':
     print '********  OPTIMIZATION CONFIGURATION PARAMETERS  ********'
     print 'Optimization method:     %s' % (opt_name)
     print 'Algorithm name:          %s' % (algo_name)
-    print 'Position type:           %s' % (position_type)
+    print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
     print 'Start date:              %s' % (start_date)
+    print 'Benchmark:               %s' % (benchmark_ticker)
     print 'End date:                %s' % (end_date)
     print 'Ticker(s):'
     for ticker in tickers:
@@ -53,12 +55,6 @@ if __name__ == '__main__':
         print '                         %s: %s' % (key, value)
     print '*********************************************************'
     print
-
-    # Determine position type (long only or long-short)
-    if position_type == 'long_only':
-        long_only = True
-    else:
-        long_only = False
 
     # Create trading algorithm
     trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers)
@@ -73,20 +69,21 @@ if __name__ == '__main__':
 
     # Sort optimization results
     results.sort(
-        columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
-        ascending=[0, 0, 0, 0, 0],
+        # columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
+        # ascending=[0, 0, 0, 0, 0],
+        columns=['MAR Ratio'],
+        ascending=[False],
         inplace=True)
 
     # Pull benchmark data, scale, and get statistics for comparison analysis
-    benchmark_ticker = 'SPY'
     benchmark_data = di.load_data([benchmark_ticker], start_date, end_date, adjusted=True)[benchmark_ticker]
     benchmark_close = benchmark_data['Close'] * (capital_base / benchmark_data['Close'][0])
     benchmark_returns = (benchmark_close - benchmark_close.shift(1)) / benchmark_close.shift(1)
     benchmark_avg_returns = benchmark_returns.mean() * 252
     benchmark_std_dev = benchmark_returns.std() * np.sqrt(252)
     benchmark_semi_std_dev = benchmark_returns.where(benchmark_returns < 0.0).std() * np.sqrt(252)
-    benchmark_sharpe = benchmark_avg_returns / benchmark_std_dev
-    benchmark_sortino = benchmark_avg_returns / benchmark_semi_std_dev
+    benchmark_sharpe = float('NaN') if benchmark_std_dev == 0 else benchmark_avg_returns / benchmark_std_dev
+    benchmark_sortino = float('NaN') if benchmark_semi_std_dev == 0 else  benchmark_avg_returns / benchmark_semi_std_dev
     benchmark_cagr = (benchmark_close[-1] / benchmark_close[0]) ** (1 / ((end_date - start_date).days / 365.0)) - 1
     global_high = 0.0
     local_low = 0.0
@@ -102,6 +99,7 @@ if __name__ == '__main__':
             # Record max drawdown
             if ((local_low / global_high) - 1) < benchmark_max_drawdown:
                 benchmark_max_drawdown = (local_low / global_high) - 1
+    benchmark_mar = float('NaN') if benchmark_max_drawdown == 0 else -benchmark_cagr / benchmark_max_drawdown
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
     num_scenarios = 10
@@ -129,7 +127,7 @@ if __name__ == '__main__':
     print 'Max Drawdown: %f' % (-benchmark_max_drawdown)
     print 'Sharpe Ratio: %f' % (benchmark_sharpe)
     print 'Sortino Ratio: %f' % (benchmark_sortino)
-    print 'MAR Ratio: %f\n' % (-benchmark_cagr / benchmark_max_drawdown)
+    print 'MAR Ratio: %f\n' % (benchmark_mar)
 
     print 'Top %d scenario results:' % (num_scenarios)
     print results.head(num_scenarios)[

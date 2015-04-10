@@ -1,17 +1,19 @@
 {
-  "opt_method"      : "grid_search",
-  "algo_name"       : "ma_div",
-  "position_type"   : "long_only",
-  "capital_base"    : 10000,
-  "start_date"      : "2014-01-01",
-  "end_date"        : "2014-12-31",
-  "in_sample_days"  : "504",
-  "out_sample_days" : "126",
-  "tickers"         : ["SPY"],
-  "opt_params"      : {
-                        "open_long"     : [0, 5, 11],
-                        "close_long"    : [0, 5, 11],
-                        "open_short"    : [],
-                        "close_short"   : []
-                      }
+  "opt_method"        : "grid_search",
+  "algo_name"         : "ma_div",
+  "long_only"         : 1,
+  "capital_base"      : 10000,
+  "start_date"        : "2013-01-01",
+  "end_date"          : "2014-12-31",
+  "in_sample_days"    : 504,
+  "out_sample_days"   : 126,
+  "carry_over_trades" : 1,
+  "benchmark_ticker"  : "SPY",
+  "tickers"           : ["SPY"],
+  "opt_params"        : {
+                          "open_long"     : [0, 5, 6],
+                          "close_long"    : [0, 5, 6],
+                          "open_short"    : [],
+                          "close_short"   : []
+                        }
 }
