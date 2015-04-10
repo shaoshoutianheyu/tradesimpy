@@ -174,16 +174,24 @@ class Simulator(object):
             prev_invested_amount = invested_amount[date]
             prev_portfolio_value = portfolio_value[date]
 
-            # Monitor portfolio drawdown
-            if portfolio_value[date] > global_high:
-                global_high = portfolio_value[date]
-                local_low = global_high
-            elif portfolio_value[date] < local_low:
-                local_low = portfolio_value[date]
+            # Monitor portfolio drawdown (conservatively)
+            if len(purchased_shares) != 0:
+                # Price entire portfolio's day high and low
+                portfolio_high = cash_amount[date]
+                portfolio_low = cash_amount[date]
+                for key, value in purchased_shares.iteritems():
+                    portfolio_high += value*self.data[key].loc[date, 'High']
+                    portfolio_low += value*self.data[key].loc[date, 'Low']
 
-                # Record max drawdown
-                if ((local_low / global_high) - 1) < max_drawdown:
-                    max_drawdown = (local_low / global_high) - 1
+                if portfolio_high > global_high:
+                    global_high = portfolio_high
+                    local_low = global_high
+                elif portfolio_low < local_low:
+                    local_low = portfolio_low
+
+                    # Record max drawdown
+                    if ((local_low / global_high) - 1) < max_drawdown:
+                        max_drawdown = (local_low / global_high) - 1
 
         # Create data frame out of daily trade stats
         daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
@@ -201,15 +209,16 @@ class Simulator(object):
         annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] < 0.0).std() * np.sqrt(252)
         years_traded = (((self.dates[-1] - self.dates[0]).days + 1) / 365.0)
         total_return = daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]
+        cagr = total_return ** (1 / years_traded) - 1
 
         # Create dictionary out of period stats
-        # TODO: Attach params from trading_algo
         period_results = {
-            'Max Drawdown': max_drawdown,
+            'Max Drawdown': -max_drawdown,
             'Sharpe Ratio': annual_avg_return / annual_std_dev,
             'Sortino Ratio': annual_avg_return / annual_semi_std_dev,
+            'MAR Ratio': -cagr / max_drawdown,
             # 'Information Ratio': 0.0,
-            'CAGR': (total_return) ** (1 / years_traded) - 1,
+            'CAGR': cagr,
             'Total Return': total_return - 1,
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,

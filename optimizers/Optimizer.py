@@ -79,25 +79,33 @@ if __name__ == '__main__':
 
     # Pull benchmark data, scale, and get statistics for comparison analysis
     benchmark_ticker = 'SPY'
-    benchmark = di.load_data([benchmark_ticker], start_date, end_date, adjusted=True)[benchmark_ticker]['Close']
-    benchmark *= (capital_base / benchmark[0])
-    benchmark_returns = (benchmark - benchmark.shift(1)) / benchmark.shift(1)
+    benchmark_data = di.load_data([benchmark_ticker], start_date, end_date, adjusted=True)[benchmark_ticker]
+    benchmark_close = benchmark_data['Close'] * (capital_base / benchmark_data['Close'][0])
+    benchmark_returns = (benchmark_close - benchmark_close.shift(1)) / benchmark_close.shift(1)
     benchmark_avg_returns = benchmark_returns.mean() * 252
     benchmark_std_dev = benchmark_returns.std() * np.sqrt(252)
     benchmark_semi_std_dev = benchmark_returns.where(benchmark_returns < 0.0).std() * np.sqrt(252)
     benchmark_sharpe = benchmark_avg_returns / benchmark_std_dev
     benchmark_sortino = benchmark_avg_returns / benchmark_semi_std_dev
+    benchmark_cagr = (benchmark_close[-1] / benchmark_close[0]) ** (1 / ((end_date - start_date).days / 365.0)) - 1
+    global_high = 0.0
+    local_low = 0.0
+    benchmark_max_drawdown = 0.0
+    for p in benchmark_data.index:
+        if benchmark_data.ix[p]['High'] > global_high:
+            global_high = benchmark_data.ix[p]['High']
+            local_low = global_high
 
-    # print benchmark
-    # print benchmark_returns
-    # print benchmark_sharpe
-    # print benchmark_sortino
-    # exit(1)
+        if benchmark_data.ix[p]['Low'] < local_low:
+            local_low = benchmark_data.ix[p]['Low']
+
+            # Record max drawdown
+            if ((local_low / global_high) - 1) < benchmark_max_drawdown:
+                benchmark_max_drawdown = (local_low / global_high) - 1
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
     num_scenarios = 10
-    # port_value_series = pd.concat(list(benchmark), axis=0)
-    port_value_series = pd.DataFrame(benchmark)
+    port_value_series = pd.DataFrame(benchmark_close)
     for i in range(0, num_scenarios):
         port_value_series[str(results.head(num_scenarios).iloc[i]['Params'])] =\
             pd.Series(results.head(num_scenarios).iloc[i]['Portfolio Value'],
@@ -116,14 +124,22 @@ if __name__ == '__main__':
     results.to_csv(filename, index=False)
 
     print 'Benchmark results:'
-    print 'Total Return: %f' % ((benchmark[-1] / benchmark[0]) - 1)
+    print 'Total Return: %f' % ((benchmark_close[-1] / benchmark_close[0]) - 1)
+    print 'CAGR: %f' % (benchmark_cagr)
+    print 'Max Drawdown: %f' % (-benchmark_max_drawdown)
     print 'Sharpe Ratio: %f' % (benchmark_sharpe)
     print 'Sortino Ratio: %f' % (benchmark_sortino)
-    print 'Max Drawdown: %f' % (0.0)
-    print 'CAGR: %f\n' % ((benchmark[-1] / benchmark[0]) ** (1 / ((end_date - start_date).days / 365.0)) - 1)
+    print 'MAR Ratio: %f\n' % (-benchmark_cagr / benchmark_max_drawdown)
 
     print 'Top %d scenario results:' % (num_scenarios)
     print results.head(num_scenarios)[
-        ['Params', 'Sharpe Ratio', 'Sortino Ratio', 'Total Return', 'Max Drawdown', 'CAGR', 'Total Trades']
+        ['Params',
+         'Total Return',
+         'CAGR',
+         'Max Drawdown',
+         'Sharpe Ratio',
+         'Sortino Ratio',
+         'MAR Ratio',
+         'Total Trades']
     ]
     plt.show()
