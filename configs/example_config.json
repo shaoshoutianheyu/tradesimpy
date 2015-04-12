@@ -3,11 +3,11 @@
   "algo_name"         : "ma_div",
   "long_only"         : 1,
   "capital_base"      : 10000,
-  "start_date"        : "2013-01-01",
+  "start_date"        : "2014-01-01",
   "end_date"          : "2014-12-31",
   "in_sample_days"    : 504,
   "out_sample_days"   : 126,
-  "carry_over_trades" : 1,
+  "carry_over_trades" : 0,
   "benchmark_ticker"  : "SPY",
   "tickers"           : ["SPY"],
   "opt_params"        : {

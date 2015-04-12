@@ -5,7 +5,7 @@ import pandas as pd
 
 
 class Simulator(object):
-    def __init__(self, capital_base, trading_algo=None, data=None):
+    def __init__(self, capital_base, carry_over_trades=False, trading_algo=None, data=None):
         self.trading_algo = trading_algo
         self.data = data
         self.capital_base = capital_base
@@ -13,6 +13,7 @@ class Simulator(object):
         self.portfolio_global_high = capital_base
         self.portfolio_local_low = capital_base
         self.max_drawdown = 0.0
+        self.carry_over_trades = carry_over_trades
 
         if trading_algo is not None and data is not None:
             # Determine trading start dates for each ticker
@@ -192,6 +193,46 @@ class Simulator(object):
                     # Record max drawdown
                     if ((self.portfolio_local_low / self.portfolio_global_high) - 1) < self.max_drawdown:
                         self.max_drawdown = (self.portfolio_local_low / self.portfolio_global_high) - 1
+
+        # Determine if all open positions should be closed
+        # TODO: Figure out how to carry over trades between trading periods
+        if self.carry_over_trades:
+            pass
+        else:
+            # Close all open positions that exist
+            if len(purchased_shares) != 0:
+                temp_purchased_shares = purchased_shares.copy()
+                for key, value in temp_purchased_shares.iteritems():
+                    # Mark the portfolio to market
+                    current_invested_amount = 0.0
+                    for k, v in purchased_shares.iteritems():
+                        current_invested_amount += v*self.data[k].loc[date, 'Open']
+
+                    # Determine how many shares to purchase
+                    # TODO: Introduce slippage here, set from config file
+                    share_price = self.data[key].loc[date, 'Open']
+
+                    # Record commission
+                    # TODO: Set commission per trade from config file
+                    commission = 1.0
+                    commissions[date] += commission
+
+                    # Sell shares for cash
+                    cash_amount[date] = prev_cash_amount + purchased_shares[key]*share_price - commission
+
+                    # End of day invested amount
+                    invested_amount[date] = current_invested_amount - purchased_shares[key]*share_price
+
+                    # Record transaction
+                    transactions[date][key] = {
+                        'position': 0,
+                        'share_count': purchased_shares[key],
+                        'share_price': share_price
+                    }
+
+                    # Remove purchased record
+                    del purchased_shares[key]
+
 
         # Create data frame out of daily trade stats
         daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())

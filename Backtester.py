@@ -66,7 +66,7 @@ class Backtester(object):
         # Create trading algorithm, optimizer, and simulator
         trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only, tickers=self.tickers)
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
-        simulator = sim.Simulator(capital_base=capital_base)
+        simulator = sim.Simulator(capital_base=capital_base, carry_over_trades=carry_over_trades)
 
         # Backtest trading algorithm using walk forward analysis
         for periods in self.sample_periods:

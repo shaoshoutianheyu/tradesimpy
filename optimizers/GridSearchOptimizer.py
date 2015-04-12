@@ -83,7 +83,7 @@ class GridSearchOptimizer(Optimizer):
 
         # Simulate all trading scenarios in parallel
         pool = mp.Pool(processes=mp.cpu_count())
-        results = pool.map(func=_simulation, iterable=simulation_args, chunksize=10)
+        results = pool.map(func=_simulation, iterable=simulation_args)
 
         return pd.DataFrame(results)
 
