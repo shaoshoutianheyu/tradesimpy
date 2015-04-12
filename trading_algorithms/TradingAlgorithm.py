@@ -10,8 +10,10 @@ class TradingAlgorithm(object):
         for ticker in self.tickers:
             self.is_open[ticker] = False
 
-    def set_parameters(self, params):
+    def set_parameters(self, params, carry_over_trades):
         self.params = params
 
-        for ticker in self.tickers:
-            self.is_open[ticker] = False
+        # Remove memory of previous trade period's positions (if necessary)
+        if not carry_over_trades:
+            for ticker in self.tickers:
+                self.is_open[ticker] = False

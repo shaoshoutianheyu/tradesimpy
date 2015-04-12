@@ -66,7 +66,7 @@ class Backtester(object):
         # Create trading algorithm, optimizer, and simulator
         trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only, tickers=self.tickers)
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
-        simulator = sim.Simulator(capital_base=capital_base, carry_over_trades=carry_over_trades)
+        simulator = sim.Simulator(capital_base=capital_base, carry_over_trades=self.carry_over_trades)
 
         # Backtest trading algorithm using walk forward analysis
         for periods in self.sample_periods:
@@ -93,7 +93,7 @@ class Backtester(object):
             )['Params'].head(1).values[0]
 
             # Set trading algorithm's parameters
-            trading_algo.set_parameters(params)
+            trading_algo.set_parameters(params=params, carry_over_trades=carry_over_trades)
 
             # Get the trading algorithm's required window length
             req_cnt = trading_algo.hist_window_length
@@ -112,12 +112,15 @@ class Backtester(object):
             # Simulate over out-of-sample data
             print 'Simulating algorithm for dates %s to %s.' % (out_start.date(), out_end.date())
             start_time = time.time()
-            period_results, daily_results = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
+            period_results, daily_results =\
+                simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
             end_time = time.time()
             print 'Finished out-of-sample simulation %f seconds.\n' % (end_time - start_time)
 
             # Keep track of the portfolio's value over time
             capital_base = period_results['End Portfolio Value']
+
+            pprint(period_results)
 
             # Record results for later analysis
             portfolio_stats.append(period_results)

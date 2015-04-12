@@ -15,6 +15,11 @@ class Simulator(object):
         self.max_drawdown = 0.0
         self.carry_over_trades = carry_over_trades
 
+        self.purchased_shares = dict()
+        self.prev_portfolio_value = self.capital_base
+        self.prev_cash_amount = self.capital_base
+        self.prev_invested_amount = 0.0
+
         if trading_algo is not None and data is not None:
             # Determine trading start dates for each ticker
             for ticker in self.trading_algo.tickers:
@@ -55,10 +60,13 @@ class Simulator(object):
         # Initialize simulation results helper variables
         algo_window_length = self.trading_algo.hist_window_length
         algo_data = dict()
-        purchased_shares = dict()
-        prev_portfolio_value = self.capital_base
-        prev_cash_amount = self.capital_base
-        prev_invested_amount = 0.0
+
+        # Reset previous values if no trades should be carried over
+        if not self.carry_over_trades:
+            self.purchased_shares = dict()
+            self.prev_portfolio_value = self.capital_base
+            self.prev_cash_amount = self.capital_base
+            self.prev_invested_amount = 0.0
 
         # Iterate over all trading days
         for date in self.dates:
@@ -79,7 +87,7 @@ class Simulator(object):
                     if value['position'] == 0:  # Close position
                         # Mark the portfolio to market
                         current_invested_amount = 0.0
-                        for k, v in purchased_shares.iteritems():
+                        for k, v in self.purchased_shares.iteritems():
                             current_invested_amount += v*self.data[k].loc[date, 'Open']
 
                         # Determine how many shares to purchase
@@ -92,26 +100,27 @@ class Simulator(object):
                         commissions[date] += commission
 
                         # Sell shares for cash
-                        cash_amount[date] = prev_cash_amount + purchased_shares[key]*share_price - commission
+                        cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - commission
 
                         # End of day invested amount
-                        invested_amount[date] = current_invested_amount - purchased_shares[key]*share_price
+                        invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
 
                         # Record transaction
                         transactions[date][key] = {
                             'position': 0,
-                            'share_count': purchased_shares[key],
+                            'share_count': self.purchased_shares[key],
                             'share_price': share_price
                         }
 
                         # Remove purchased record
-                        del purchased_shares[key]
+                        del self.purchased_shares[key]
 
                     elif value['position'] == 1:  # Open long position
                         # Determine how many shares to purchase
                         # TODO: Introduce slippage here, set from config file
                         share_price = self.data[key].loc[date, 'Open']
-                        purchased_shares[key] = m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
+                        self.purchased_shares[key] =\
+                            m.floor(self.prev_portfolio_value/share_price*value['portfolio_perc'])
 
                         # Record commission
                         # TODO: Set commission per trade from config file
@@ -119,16 +128,16 @@ class Simulator(object):
                         commissions[date] += commission
 
                         # Purchase shares using cash
-                        cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - commission
+                        cash_amount[date] = self.prev_cash_amount - self.purchased_shares[key]*share_price - commission
 
                         # End of day invested amount
                         invested_amount[date] =\
-                            prev_invested_amount + purchased_shares[key]*self.data[key].loc[date, 'Close']
+                            self.prev_invested_amount + self.purchased_shares[key]*self.data[key].loc[date, 'Close']
 
                         # Record transaction
                         transactions[date][key] = {
                             'position': 1,
-                            'share_count': purchased_shares[key],
+                            'share_count': self.purchased_shares[key],
                             'share_price': share_price
                         }
                     # TODO: Allow for short selling
@@ -158,29 +167,29 @@ class Simulator(object):
                         #     'share_price': share_price
                         # }
             else:  # No trades, mark portfolio to market
-                cash_amount[date] = prev_cash_amount
+                cash_amount[date] = self.prev_cash_amount
 
                 # Determine current invested amount
-                if len(purchased_shares) != 0:
-                    for key, value in purchased_shares.iteritems():
+                if len(self.purchased_shares) != 0:
+                    for key, value in self.purchased_shares.iteritems():
                         invested_amount[date] += value*self.data[key].loc[date, 'Close']
 
             # Record more trade stats
             portfolio_value[date] = cash_amount[date] + invested_amount[date]
-            p_n_l[date] = portfolio_value[date] - prev_portfolio_value
-            returns[date] = (portfolio_value[date] / prev_portfolio_value) - 1.0
+            p_n_l[date] = portfolio_value[date] - self.prev_portfolio_value
+            returns[date] = (portfolio_value[date] / self.prev_portfolio_value) - 1.0
 
             # Remember current asset amounts for next iteration
-            prev_cash_amount = cash_amount[date]
-            prev_invested_amount = invested_amount[date]
-            prev_portfolio_value = portfolio_value[date]
+            self.prev_cash_amount = cash_amount[date]
+            self.prev_invested_amount = invested_amount[date]
+            self.prev_portfolio_value = portfolio_value[date]
 
             # Monitor portfolio drawdown (conservatively)
-            if len(purchased_shares) != 0:
+            if len(self.purchased_shares) != 0:
                 # Price entire portfolio's day high and low
                 portfolio_high = cash_amount[date]
                 portfolio_low = cash_amount[date]
-                for key, value in purchased_shares.iteritems():
+                for key, value in self.purchased_shares.iteritems():
                     portfolio_high += value*self.data[key].loc[date, 'High']
                     portfolio_low += value*self.data[key].loc[date, 'Low']
 
@@ -195,17 +204,14 @@ class Simulator(object):
                         self.max_drawdown = (self.portfolio_local_low / self.portfolio_global_high) - 1
 
         # Determine if all open positions should be closed
-        # TODO: Figure out how to carry over trades between trading periods
-        if self.carry_over_trades:
-            pass
-        else:
+        if not self.carry_over_trades:
             # Close all open positions that exist
-            if len(purchased_shares) != 0:
-                temp_purchased_shares = purchased_shares.copy()
+            if len(self.purchased_shares) != 0:
+                temp_purchased_shares = self.purchased_shares.copy()
                 for key, value in temp_purchased_shares.iteritems():
                     # Mark the portfolio to market
                     current_invested_amount = 0.0
-                    for k, v in purchased_shares.iteritems():
+                    for k, v in self.purchased_shares.iteritems():
                         current_invested_amount += v*self.data[k].loc[date, 'Open']
 
                     # Determine how many shares to purchase
@@ -218,21 +224,20 @@ class Simulator(object):
                     commissions[date] += commission
 
                     # Sell shares for cash
-                    cash_amount[date] = prev_cash_amount + purchased_shares[key]*share_price - commission
+                    cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - commission
 
                     # End of day invested amount
-                    invested_amount[date] = current_invested_amount - purchased_shares[key]*share_price
+                    invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
 
                     # Record transaction
                     transactions[date][key] = {
                         'position': 0,
-                        'share_count': purchased_shares[key],
+                        'share_count': self.purchased_shares[key],
                         'share_price': share_price
                     }
 
                     # Remove purchased record
-                    del purchased_shares[key]
-
+                    del self.purchased_shares[key]
 
         # Create data frame out of daily trade stats
         daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())

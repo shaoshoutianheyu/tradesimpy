@@ -71,8 +71,4 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
             self.prev_ma_long = ma_long
             self.prev_ma_short = ma_short
 
-        # # Reset previous values
-        # self.prev_ma_long = 0.0
-        # self.prev_ma_short = 0.0
-
         return trade_decision

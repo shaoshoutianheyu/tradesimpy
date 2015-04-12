@@ -15,7 +15,7 @@ def _simulation(sim_args):
     # print "Scenario parameters: %r" % (params)
 
     # Simulate the trading algorithm with distinct parameters
-    trading_algo.set_parameters(params=params)
+    trading_algo.set_parameters(params=params, carry_over_trades=False)
     simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
