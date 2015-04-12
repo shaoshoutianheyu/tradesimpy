@@ -16,7 +16,7 @@ def _simulation(sim_args):
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params)
-    simulator = sim.Simulator(capital_base=100000, trading_algo=trading_algo, data=data)
+    simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
     # Append parameters to trading statistics and several time series
@@ -83,7 +83,7 @@ class GridSearchOptimizer(Optimizer):
 
         # Simulate all trading scenarios in parallel
         pool = mp.Pool(processes=mp.cpu_count())
-        results = pool.map(func=_simulation, iterable=simulation_args)
+        results = pool.map(func=_simulation, iterable=simulation_args, chunksize=10)
 
         return pd.DataFrame(results)
 

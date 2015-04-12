@@ -5,6 +5,7 @@ import pandas as pd
 import time
 from pprint import pprint
 from pandas.tseries.offsets import BDay
+import matplotlib.pyplot as plt
 import DataImport as di
 import Simulator as sim
 import trading_algorithms.TradingAlgorithmFactory as taf
@@ -58,7 +59,8 @@ class Backtester(object):
         #     print 'There will be %d distinct scenarios per optimization step\n' % (self.optimizer.num_param_sets)
 
     def run(self):
-        results = list()
+        portfolio_series = pd.DataFrame()
+        portfolio_stats = list()
         capital_base = self.capital_base
 
         # Create trading algorithm, optimizer, and simulator
@@ -102,20 +104,28 @@ class Backtester(object):
             # Pull out-of-sample data
             data = di.load_data(tickers=self.tickers, start=data_start_date, end=out_end.date(), adjusted=True)
 
+            # Grab only the required data
+            for ticker in trading_algo.tickers:
+                start_idx = data[ticker][:out_start][-req_cnt:].index.tolist()[0]
+                data[ticker] = data[ticker][start_idx:]
+
             # Simulate over out-of-sample data
             print 'Simulating algorithm for dates %s to %s.' % (out_start.date(), out_end.date())
             start_time = time.time()
-            out_sample_results, junk = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
+            period_results, daily_results = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
             end_time = time.time()
             print 'Finished out-of-sample simulation %f seconds.\n' % (end_time - start_time)
 
             # Keep track of the portfolio's value over time
-            capital_base = out_sample_results['End Portfolio Value']
+            capital_base = period_results['End Portfolio Value']
 
             # Record results for later analysis
-            results.append(out_sample_results)
+            portfolio_stats.append(period_results)
 
-        return results
+            # Concatenate all out-of-sample simulations
+            portfolio_series = pd.concat([portfolio_series, daily_results['Portfolio Value']])
+
+        return portfolio_stats, portfolio_series[0]
 
     def create_sample_periods(self, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt):
         sample_periods = list()
@@ -165,6 +175,7 @@ if __name__ == '__main__':
     algo_name = configData['algo_name'].lower()
     long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
+    benchmark_ticker = configData['benchmark_ticker']
     tickers = configData['tickers']
     start_date = pd.datetime.strptime(configData['start_date'], "%Y-%m-%d")
     end_date = pd.datetime.strptime(configData['end_date'], "%Y-%m-%d")
@@ -179,6 +190,7 @@ if __name__ == '__main__':
     print 'Algorithm name:          %s' % (algo_name)
     print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
+    print 'Benchmark ticker:        %s' % (benchmark_ticker)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'In-sample day count:     %s' % (in_sample_day_cnt)
@@ -193,7 +205,7 @@ if __name__ == '__main__':
     print '*********************************************************'
     print
 
-    # Initialize and run backtester
+    # Initialize and run backtest
     backtester = Backtester(opt_name=opt_name,
                             algo_name=algo_name,
                             long_only=long_only,
@@ -206,26 +218,50 @@ if __name__ == '__main__':
                             carry_over_trades=carry_over_trades,
                             opt_params=opt_params,
                             display_info=True)
-    results = backtester.run()
-    # pprint(results)
+    portfolio_stats, portfolio_series = backtester.run()
 
-    # TODO: Display benchmark results
+    # Pull benchmark stats
+    benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=benchmark_ticker,
+                                                  start_date=start_date,
+                                                  end_date=end_date,
+                                                  capital_base=capital_base)
 
-    # Compute backtest statistics
+    # Display benchmark results
+    print 'Benchmark results:'
+    print 'Total Return:    %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
+    print 'CAGR:            %f' % (benchmark_stats['CAGR'])
+    print 'Max Drawdown:    %f' % (benchmark_stats['Max Drawdown'])
+    print 'Sharpe Ratio:    %f' % (benchmark_stats['Sharpe Ratio'])
+    print 'Sortino Ratio:   %f' % (benchmark_stats['Sortino Ratio'])
+    print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
+
+    # Compute backtest stats
     years_traded = ((end_date - start_date).days + 1) / 365.0
     backtest_avg_sharpe =\
-        np.nansum([s['Sharpe Ratio'] for s in results]) / np.count_nonzero(~np.isnan([s['Sharpe Ratio'] for s in results]))
+        np.nansum([s['Sharpe Ratio'] for s in portfolio_stats]) / np.count_nonzero(~np.isnan([s['Sharpe Ratio'] for s in portfolio_stats]))
     backtest_avg_sortino =\
-        np.nansum([s['Sortino Ratio'] for s in results]) / np.count_nonzero(~np.isnan([s['Sortino Ratio'] for s in results]))
-    backtest_total_return = results[-1]['End Portfolio Value'] / results[0]['Start Portfolio Value']
+        np.nansum([s['Sortino Ratio'] for s in portfolio_stats]) / np.count_nonzero(~np.isnan([s['Sortino Ratio'] for s in portfolio_stats]))
+    backtest_total_return = portfolio_stats[-1]['End Portfolio Value'] / portfolio_stats[0]['Start Portfolio Value']
     backtest_cagr = backtest_total_return ** (1 / years_traded) - 1
-    total_trades = np.sum([t['Total Trades'] for t in results])
+    total_trades = np.sum([t['Total Trades'] for t in portfolio_stats])
 
+    # Display backtesting results
     print 'Backtest results:'
-    print 'Total Return:            %f' % (backtest_total_return - 1)
-    print 'CAGR:                    %f' % (backtest_cagr)
-    print 'Max Drawdown:            %f' % (results[-1]['Max Drawdown'])
-    print 'Average Sharpe Ratio:    %f' % (backtest_avg_sharpe)
-    print 'Average Sortino Ratio:   %f' % (backtest_avg_sortino)
-    print 'MAR Ratio:               %f' % (backtest_cagr / results[-1]['Max Drawdown'])
-    print 'Total Trades:            %d' % (total_trades)
+    print 'Total Return:    %f' % (backtest_total_return - 1)
+    print 'CAGR:            %f' % (backtest_cagr)
+    print 'Max Drawdown:    %f' % (portfolio_stats[-1]['Max Drawdown'])
+    print 'Sharpe Ratio:    %f' % (backtest_avg_sharpe)
+    print 'Sortino Ratio:   %f' % (backtest_avg_sortino)
+    print 'MAR Ratio:       %f' % (backtest_cagr / portfolio_stats[-1]['Max Drawdown'])
+    print 'Total Trades:    %d' % (total_trades)
+
+    # Display a plot comparing the benchmark and portfolio values
+    port_value_series = pd.DataFrame(benchmark_stats['Portfolio Value'])
+    port_value_series['Portfolio'] = portfolio_series
+    plot = port_value_series.plot(title='Trading Algorithm vs. Benchmark',
+                                  legend=False,
+                                  colormap='rainbow')
+    plot.set_xlabel('Date')
+    plot.set_ylabel('Value')
+    plot.legend(loc=2, prop={'size': 10})
+    plt.show()

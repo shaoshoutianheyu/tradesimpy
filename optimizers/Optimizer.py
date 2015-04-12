@@ -75,35 +75,24 @@ if __name__ == '__main__':
         ascending=[False],
         inplace=True)
 
-    # Pull benchmark data, scale, and get statistics for comparison analysis
-    benchmark_data = di.load_data([benchmark_ticker], start_date, end_date, adjusted=True)[benchmark_ticker]
-    benchmark_close = benchmark_data['Close'] * (capital_base / benchmark_data['Close'][0])
-    benchmark_returns = (benchmark_close - benchmark_close.shift(1)) / benchmark_close.shift(1)
-    benchmark_avg_returns = benchmark_returns.mean() * 252
-    benchmark_std_dev = benchmark_returns.std() * np.sqrt(252)
-    benchmark_semi_std_dev = benchmark_returns.where(benchmark_returns < 0.0).std() * np.sqrt(252)
-    benchmark_sharpe = float('NaN') if benchmark_std_dev == 0 else benchmark_avg_returns / benchmark_std_dev
-    benchmark_sortino = float('NaN') if benchmark_semi_std_dev == 0 else  benchmark_avg_returns / benchmark_semi_std_dev
-    benchmark_cagr = (benchmark_close[-1] / benchmark_close[0]) ** (1 / ((end_date - start_date).days / 365.0)) - 1
-    global_high = 0.0
-    local_low = 0.0
-    benchmark_max_drawdown = 0.0
-    for p in benchmark_data.index:
-        if benchmark_data.ix[p]['High'] > global_high:
-            global_high = benchmark_data.ix[p]['High']
-            local_low = global_high
+    # Pull benchmark stats
+    benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=benchmark_ticker,
+                                                  start_date=start_date,
+                                                  end_date=end_date,
+                                                  capital_base=capital_base)
 
-        if benchmark_data.ix[p]['Low'] < local_low:
-            local_low = benchmark_data.ix[p]['Low']
-
-            # Record max drawdown
-            if ((local_low / global_high) - 1) < benchmark_max_drawdown:
-                benchmark_max_drawdown = (local_low / global_high) - 1
-    benchmark_mar = float('NaN') if benchmark_max_drawdown == 0 else -benchmark_cagr / benchmark_max_drawdown
+    # Display benchmark results
+    print 'Benchmark results:'
+    print 'Total Return:    %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
+    print 'CAGR:            %f' % (benchmark_stats['CAGR'])
+    print 'Max Drawdown:    %f' % (benchmark_stats['Max Drawdown'])
+    print 'Sharpe Ratio:    %f' % (benchmark_stats['Sharpe Ratio'])
+    print 'Sortino Ratio:   %f' % (benchmark_stats['Sortino Ratio'])
+    print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
     num_scenarios = 10
-    port_value_series = pd.DataFrame(benchmark_close)
+    port_value_series = pd.DataFrame(benchmark_stats['Portfolio Value'])
     for i in range(0, num_scenarios):
         port_value_series[str(results.head(num_scenarios).iloc[i]['Params'])] =\
             pd.Series(results.head(num_scenarios).iloc[i]['Portfolio Value'],
@@ -120,14 +109,6 @@ if __name__ == '__main__':
     filename = '%s.%s.%s.csv' % (algo_name, opt_name, datetime.now())
     del results['Portfolio Value']
     results.to_csv(filename, index=False)
-
-    print 'Benchmark results:'
-    print 'Total Return: %f' % ((benchmark_close[-1] / benchmark_close[0]) - 1)
-    print 'CAGR: %f' % (benchmark_cagr)
-    print 'Max Drawdown: %f' % (-benchmark_max_drawdown)
-    print 'Sharpe Ratio: %f' % (benchmark_sharpe)
-    print 'Sortino Ratio: %f' % (benchmark_sortino)
-    print 'MAR Ratio: %f\n' % (benchmark_mar)
 
     print 'Top %d scenario results:' % (num_scenarios)
     print results.head(num_scenarios)[

@@ -58,9 +58,6 @@ class Simulator(object):
         prev_portfolio_value = self.capital_base
         prev_cash_amount = self.capital_base
         prev_invested_amount = 0.0
-        # max_drawdown = 0.0
-        # portfolio_global_high = self.capital_base
-        # portfolio_local_low = self.capital_base
 
         # Iterate over all trading days
         for date in self.dates:
