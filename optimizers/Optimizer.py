@@ -92,7 +92,9 @@ if __name__ == '__main__':
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
     num_scenarios = 10
-    port_value_series = pd.DataFrame(benchmark_stats['Portfolio Value'])
+    port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
+                                     index=benchmark_stats['Portfolio Value'].index,
+                                     columns=[benchmark_ticker])
     for i in range(0, num_scenarios):
         port_value_series[str(results.head(num_scenarios).iloc[i]['Params'])] =\
             pd.Series(results.head(num_scenarios).iloc[i]['Portfolio Value'],
