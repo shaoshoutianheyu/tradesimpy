@@ -68,12 +68,22 @@ class Backtester(object):
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
         simulator = sim.Simulator(capital_base=capital_base, carry_over_trades=self.carry_over_trades)
 
+        test_cnt = 0
+
+        # Get the trading algorithm's required window length
+        req_cnt = trading_algo.hist_window_length
+
         # Backtest trading algorithm using walk forward analysis
         for periods in self.sample_periods:
             in_start = periods['in'][0]
             in_end = periods['in'][1]
             out_start = periods['out'][0]
             out_end = periods['out'][1]
+
+            print 'in_start:    %s' % (in_start)
+            print 'in_end:      %s' % (in_end)
+            print 'out_start:   %s' % (out_start)
+            print 'out_end:     %s' % (out_end)
 
             # Optimize over in-sample data
             print 'Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date())
@@ -95,18 +105,19 @@ class Backtester(object):
             # Set trading algorithm's parameters
             trading_algo.set_parameters(params=params, carry_over_trades=carry_over_trades)
 
-            # Get the trading algorithm's required window length
-            req_cnt = trading_algo.hist_window_length
-
             # Adjust the date range to approximately accommodate for indicator window length
             data_start_date = out_start - BDay(req_cnt + 5)
 
             # Pull out-of-sample data
-            data = di.load_data(tickers=self.tickers, start=data_start_date, end=out_end.date(), adjusted=True)
+            data = di.load_data(tickers=self.tickers, start=data_start_date.date(), end=out_end.date(), adjusted=True)
 
             # Grab only the required data
             for ticker in trading_algo.tickers:
-                start_idx = data[ticker][:out_start][-req_cnt:].index.tolist()[0]
+                # Start on valid date
+                while out_start not in data[ticker].index:
+                    out_start += BDay(1)
+
+                start_idx = data[ticker][:out_start][-req_cnt-1:].index.tolist()[0]
                 data[ticker] = data[ticker][start_idx:]
 
             # Simulate over out-of-sample data
@@ -119,8 +130,6 @@ class Backtester(object):
 
             # Keep track of the portfolio's value over time
             capital_base = period_results['End Portfolio Value']
-
-            pprint(period_results)
 
             # Record results for later analysis
             portfolio_stats.append(period_results)
@@ -239,6 +248,7 @@ if __name__ == '__main__':
     print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Compute backtest stats
+    # TODO: Use concated daily portfolio stats for ratio computations
     years_traded = ((end_date - start_date).days + 1) / 365.0
     backtest_avg_sharpe =\
         np.nansum([s['Sharpe Ratio'] for s in portfolio_stats]) / np.count_nonzero(~np.isnan([s['Sharpe Ratio'] for s in portfolio_stats]))

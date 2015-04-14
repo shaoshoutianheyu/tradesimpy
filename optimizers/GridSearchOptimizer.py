@@ -12,7 +12,6 @@ from pprint import pprint
 def _simulation(sim_args):
     # Extract simulation arguments
     params, trading_algo, data = sim_args
-    # print "Scenario parameters: %r" % (params)
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params, carry_over_trades=False)
@@ -50,17 +49,21 @@ class GridSearchOptimizer(Optimizer):
 
         # Grab only the required data
         for ticker in trading_algo.tickers:
+            # Start on valid date
+            while start_date not in data[ticker].index:
+                start_date += BDay(1)
+
             start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
             data[ticker] = data[ticker][start_idx:]
 
         # # Simulate all trading scenarios and save results
         # for params in self.param_sets:
-        #     print "\nScenario parameters:"
-        #     for key, value in params.iteritems():
-        #         print "    %s: %f" % (key, value)
+        #     # print "\nScenario parameters:"
+        #     # for key, value in params.iteritems():
+        #     #     print "    %s: %f" % (key, value)
         #
         #     # Set the trading algorithm's parameters
-        #     trading_algo.set_parameters(params=params)
+        #     trading_algo.set_parameters(params=params, carry_over_trades=False)
         #
         #     # Simulate the trading algorithm
         #     simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
@@ -70,9 +73,6 @@ class GridSearchOptimizer(Optimizer):
         #     period_results['Params'] = params
         #     period_results['Portfolio Value'] = daily_results['Portfolio Value']
         #     results.append(period_results)
-        #
-        #     # print results[0]['Portfolio Value']
-        #     # exit(1)
 
         # Prepare input data for running parallel simulations
         simulation_args = itertools.izip(
