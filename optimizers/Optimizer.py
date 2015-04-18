@@ -32,6 +32,7 @@ if __name__ == '__main__':
     algo_name = configData['algo_name'].lower()
     long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
+    commission = float(configData['commission'])
     benchmark_ticker = configData['benchmark_ticker']
     tickers = configData['tickers']
     start_date = datetime.strptime(configData['start_date'], '%Y-%m-%d')
@@ -44,6 +45,7 @@ if __name__ == '__main__':
     print 'Algorithm name:          %s' % (algo_name)
     print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
+    print 'Commission:              %s' % (commission)
     print 'Start date:              %s' % (start_date)
     print 'Benchmark:               %s' % (benchmark_ticker)
     print 'End date:                %s' % (end_date)
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
     print 'Optimizing parameter set for dates %s to %s.' % (start_date, end_date)
     start_time = time.time()
-    results = optimizer.run(trading_algo, start_date.date(), end_date.date())
+    results = optimizer.run(trading_algo, commission, start_date.date(), end_date.date())
     end_time = time.time()
     print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
@@ -91,16 +93,16 @@ if __name__ == '__main__':
     print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
-    num_scenarios = 10
+    top_scenarios = 10
     port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
                                      index=benchmark_stats['Portfolio Value'].index,
                                      columns=[benchmark_ticker])
-    for i in range(0, num_scenarios):
-        port_value_series[str(results.head(num_scenarios).iloc[i]['Params'])] =\
-            pd.Series(results.head(num_scenarios).iloc[i]['Portfolio Value'],
-                index=results.head(num_scenarios).iloc[i]['Portfolio Value'].keys())
+    for i in range(0, top_scenarios):
+        port_value_series[str(results.head(top_scenarios).iloc[i]['Params'])] =\
+            pd.Series(results.head(top_scenarios).iloc[i]['Portfolio Value'],
+                index=results.head(top_scenarios).iloc[i]['Portfolio Value'].keys())
 
-    plot = port_value_series.plot(title='Portfolio Value of Top %d Scenarios and Benchmark' % (num_scenarios),
+    plot = port_value_series.plot(title='Portfolio Value of Top %d Scenarios and Benchmark' % (top_scenarios),
                                   legend=False,
                                   colormap='rainbow')
     plot.set_xlabel('Date')
@@ -112,8 +114,8 @@ if __name__ == '__main__':
     del results['Portfolio Value']
     results.to_csv(filename, index=False)
 
-    print 'Top %d scenario results:' % (num_scenarios)
-    print results.head(num_scenarios)[
+    print 'Top %d scenario results:' % (top_scenarios)
+    print results.head(top_scenarios)[
         ['Params',
          'Total Return',
          'CAGR',
@@ -121,6 +123,10 @@ if __name__ == '__main__':
          'Sharpe Ratio',
          'Sortino Ratio',
          'MAR Ratio',
-         'Total Trades']
+         'Total Trades',
+         'Winning Trades',
+         'Losing Trades',
+         'Average Winning Trade',
+         'Average Losing Trade']
     ]
     plt.show()

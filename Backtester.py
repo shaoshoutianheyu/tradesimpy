@@ -13,13 +13,14 @@ import optimizers.OptimizerFactory as of
 
 
 class Backtester(object):
-    def __init__(self, opt_name, algo_name, long_only, capital_base, tickers, start_date, end_date, in_sample_day_cnt,
-                 out_sample_day_cnt, carry_over_trades, opt_params, display_info=False):
+    def __init__(self, opt_name, algo_name, long_only, capital_base, commission, tickers, start_date, end_date,
+                 in_sample_day_cnt, out_sample_day_cnt, carry_over_trades, opt_params, display_info=False):
         # Data members
         self.opt_name = opt_name
         self.algo_name = algo_name
         self.long_only = long_only
         self.capital_base = capital_base
+        self.commission = commission
         self.tickers = tickers
         self.start_date = start_date
         self.end_date = end_date
@@ -66,7 +67,8 @@ class Backtester(object):
         # Create trading algorithm, optimizer, and simulator
         trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only, tickers=self.tickers)
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
-        simulator = sim.Simulator(capital_base=capital_base, carry_over_trades=self.carry_over_trades)
+        simulator =\
+            sim.Simulator(capital_base=capital_base, commission=self.commission, carry_over_trades=self.carry_over_trades)
 
         # Get the trading algorithm's required window length
         req_cnt = trading_algo.hist_window_length
@@ -81,7 +83,8 @@ class Backtester(object):
             # Optimize over in-sample data
             print 'Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date())
             start_time = time.time()
-            in_sample_results = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
+            in_sample_results =\
+                optimizer.run(trading_algo=trading_algo, commission=self.commission, start_date=in_start, end_date=in_end)
             end_time = time.time()
             print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
@@ -180,6 +183,7 @@ if __name__ == '__main__':
     algo_name = configData['algo_name'].lower()
     long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
+    commission = float(configData['commission'])
     benchmark_ticker = configData['benchmark_ticker']
     tickers = configData['tickers']
     start_date = pd.datetime.strptime(configData['start_date'], "%Y-%m-%d")
@@ -195,6 +199,7 @@ if __name__ == '__main__':
     print 'Algorithm name:          %s' % (algo_name)
     print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
+    print 'Commission:              %s' % (commission)
     print 'Benchmark ticker:        %s' % (benchmark_ticker)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
@@ -215,6 +220,7 @@ if __name__ == '__main__':
                             algo_name=algo_name,
                             long_only=long_only,
                             capital_base=capital_base,
+                            commission=commission,
                             tickers=tickers,
                             start_date=start_date,
                             end_date=end_date,
@@ -241,7 +247,6 @@ if __name__ == '__main__':
     print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Compute backtest stats
-    # TODO: Use concated daily portfolio stats for ratio computations
     years_traded = ((end_date - start_date).days + 1) / 365.0
     backtest_avg_return = portfolio_series['Return'].mean() * 252
     backtest_std_dev = portfolio_series['Return'].std() * np.sqrt(252)
@@ -250,17 +255,24 @@ if __name__ == '__main__':
     backtest_sortino = backtest_avg_return / backtest_semi_std_dev
     backtest_total_return = portfolio_stats[-1]['End Portfolio Value'] / portfolio_stats[0]['Start Portfolio Value']
     backtest_cagr = backtest_total_return ** (1 / years_traded) - 1
-    total_trades = np.sum([t['Total Trades'] for t in portfolio_stats])
+    backtest_avg_win_trade =\
+        [t['Average Winning Trade'] for t in portfolio_stats if not np.isnan(t['Average Winning Trade'])]
+    backtest_avg_lose_trade =\
+        [t['Average Losing Trade'] for t in portfolio_stats if not np.isnan(t['Average Losing Trade'])]
 
     # Display backtesting results
     print 'Backtest results:'
-    print 'Total Return:    %f' % (backtest_total_return - 1)
-    print 'CAGR:            %f' % (backtest_cagr)
-    print 'Max Drawdown:    %f' % (portfolio_stats[-1]['Max Drawdown'])
-    print 'Sharpe Ratio:    %f' % (backtest_sharpe)
-    print 'Sortino Ratio:   %f' % (backtest_sortino)
-    print 'MAR Ratio:       %f' % (backtest_cagr / portfolio_stats[-1]['Max Drawdown'])
-    print 'Total Trades:    %d' % (total_trades)
+    print 'Total Return:            %f' % (backtest_total_return - 1)
+    print 'CAGR:                    %f' % (backtest_cagr)
+    print 'Max Drawdown:            %f' % (portfolio_stats[-1]['Max Drawdown'])
+    print 'Sharpe Ratio:            %f' % (backtest_sharpe)
+    print 'Sortino Ratio:           %f' % (backtest_sortino)
+    print 'MAR Ratio:               %f' % (backtest_cagr / portfolio_stats[-1]['Max Drawdown'])
+    print 'Total Trades:            %d' % (np.sum([t['Total Trades'] for t in portfolio_stats]))
+    print 'Winning Trades:          %d' % (np.sum([t['Winning Trades'] for t in portfolio_stats]))
+    print 'Losing Trades:           %d' % (np.sum([t['Losing Trades'] for t in portfolio_stats]))
+    print 'Average Winning Trades:  %f' % (np.sum(backtest_avg_win_trade) / len(backtest_avg_win_trade))
+    print 'Average Losing Trades:   %f' % (np.sum(backtest_avg_lose_trade) / len(backtest_avg_lose_trade))
 
     # Display a plot comparing the benchmark and portfolio values
     port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,

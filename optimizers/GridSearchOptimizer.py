@@ -11,11 +11,11 @@ from pprint import pprint
 
 def _simulation(sim_args):
     # Extract simulation arguments
-    params, trading_algo, data = sim_args
+    params, trading_algo, commission, data = sim_args
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params, carry_over_trades=False)
-    simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
+    simulator = sim.Simulator(capital_base=10000, commission=commission, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
     # Append parameters to trading statistics and several time series
@@ -35,7 +35,7 @@ class GridSearchOptimizer(Optimizer):
         self.param_sets = self.get_param_sets(self.param_spaces)
         self.num_param_sets = len(self.param_sets)
 
-    def run(self, trading_algo, start_date, end_date):
+    def run(self, trading_algo, commission, start_date, end_date):
         results = list()
 
         # Get the trading algorithm's required window length
@@ -66,8 +66,9 @@ class GridSearchOptimizer(Optimizer):
         #     trading_algo.set_parameters(params=params, carry_over_trades=False)
         #
         #     # Simulate the trading algorithm
-        #     simulator = sim.Simulator(capital_base=10000, trading_algo=trading_algo, data=data)
+        #     simulator = sim.Simulator(capital_base=10000, commission=commission, trading_algo=trading_algo, data=data)
         #     period_results, daily_results = simulator.run()
+        #     exit(1)
         #
         #     # Record scenario parameters and statistics
         #     period_results['Params'] = params
@@ -78,6 +79,7 @@ class GridSearchOptimizer(Optimizer):
         simulation_args = itertools.izip(
             self.param_sets,
             itertools.repeat(trading_algo),
+            itertools.repeat(commission),
             itertools.repeat(data),
         )
 

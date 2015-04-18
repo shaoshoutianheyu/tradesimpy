@@ -2,10 +2,11 @@ from simulator_import import *
 import math as m
 import numpy as np
 import pandas as pd
+from pprint import pprint
 
 
 class Simulator(object):
-    def __init__(self, capital_base, carry_over_trades=False, trading_algo=None, data=None):
+    def __init__(self, capital_base, commission, carry_over_trades=False, trading_algo=None, data=None):
         self.trading_algo = trading_algo
         self.data = data
         self.capital_base = capital_base
@@ -14,6 +15,7 @@ class Simulator(object):
         self.portfolio_local_low = capital_base
         self.max_drawdown = 0.0
         self.carry_over_trades = carry_over_trades
+        self.commission = commission
 
         self.purchased_shares = dict()
         self.prev_portfolio_value = self.capital_base
@@ -31,6 +33,10 @@ class Simulator(object):
 
     def run(self, capital_base=10000, trading_algo=None, data=None):
         self.capital_base = capital_base
+        winning_trade_cnt = 0
+        losing_trade_cnt = 0
+        winning_trade_returns = list()
+        losing_trade_returns = list()
 
         # Create trading algorithm if necessary
         if trading_algo is not None:
@@ -67,6 +73,7 @@ class Simulator(object):
             self.prev_portfolio_value = self.capital_base
             self.prev_cash_amount = self.capital_base
             self.prev_invested_amount = 0.0
+            self.open_share_price = 0.0
 
         # Iterate over all trading days
         for date in self.dates:
@@ -95,12 +102,11 @@ class Simulator(object):
                         share_price = self.data[key].loc[date, 'Open']
 
                         # Record commission
-                        # TODO: Set commission per trade from config file
-                        commission = 1.0
-                        commissions[date] += commission
+                        commissions[date] += self.commission
 
                         # Sell shares for cash
-                        cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - commission
+                        cash_amount[date] =\
+                            self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
 
                         # End of day invested amount
                         invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
@@ -111,6 +117,14 @@ class Simulator(object):
                             'share_count': self.purchased_shares[key],
                             'share_price': share_price
                         }
+
+                        # Wining or losing trade
+                        if share_price > self.open_share_price:
+                            winning_trade_cnt += 1
+                            winning_trade_returns.append((share_price / self.open_share_price) - 1)
+                        else:
+                            losing_trade_cnt += 1
+                            losing_trade_returns.append((share_price / self.open_share_price) - 1)
 
                         # Remove purchased record
                         del self.purchased_shares[key]
@@ -123,12 +137,11 @@ class Simulator(object):
                             m.floor(self.prev_portfolio_value/share_price*value['portfolio_perc'])
 
                         # Record commission
-                        # TODO: Set commission per trade from config file
-                        commission = 1.0
-                        commissions[date] += commission
+                        commissions[date] += self.commission
 
                         # Purchase shares using cash
-                        cash_amount[date] = self.prev_cash_amount - self.purchased_shares[key]*share_price - commission
+                        cash_amount[date] =\
+                            self.prev_cash_amount - self.purchased_shares[key]*share_price - self.commission
 
                         # End of day invested amount
                         invested_amount[date] =\
@@ -140,6 +153,7 @@ class Simulator(object):
                             'share_count': self.purchased_shares[key],
                             'share_price': share_price
                         }
+                        self.open_share_price = share_price
                     # TODO: Allow for short selling
                     elif value['position'] == -1:  # Open short position
                         pass
@@ -149,12 +163,10 @@ class Simulator(object):
                         # purchased_shares[key] = -m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
                         #
                         # # Record commission
-                        # # TODO: Set commission per trade from config file
-                        # commission = 1.0
-                        # commissions[date] += commission
+                        # commissions[date] += self.commission
                         #
                         # # Purchase shares using cash
-                        # cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - commission
+                        # cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - self.commission
                         #
                         # # End of day invested amount
                         # invested_amount[date] =\
@@ -219,12 +231,10 @@ class Simulator(object):
                     share_price = self.data[key].loc[date, 'Open']
 
                     # Record commission
-                    # TODO: Set commission per trade from config file
-                    commission = 1.0
-                    commissions[date] += commission
+                    commissions[date] += self.commission
 
                     # Sell shares for cash
-                    cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - commission
+                    cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
 
                     # End of day invested amount
                     invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
@@ -270,9 +280,13 @@ class Simulator(object):
             'Total Return': total_return - 1,
             'Annual Return': annual_avg_return,
             'Annual Volatility': annual_std_dev,
-            'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count(),
             'Start Portfolio Value': daily_results['Portfolio Value'][0],
-            'End Portfolio Value': daily_results['Portfolio Value'][-1]
+            'End Portfolio Value': daily_results['Portfolio Value'][-1],
+            'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count() / 2,
+            'Winning Trades': winning_trade_cnt,
+            'Losing Trades': losing_trade_cnt,
+            'Average Winning Trade': float('NaN') if len(winning_trade_returns) == 0 else np.mean(winning_trade_returns),
+            'Average Losing Trade': float('NaN') if len(losing_trade_returns) == 0 else np.mean(losing_trade_returns),
         }
 
         return period_results, daily_results
