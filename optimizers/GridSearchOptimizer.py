@@ -11,11 +11,12 @@ from pprint import pprint
 
 def _simulation(sim_args):
     # Extract simulation arguments
-    params, trading_algo, commission, data = sim_args
+    params, trading_algo, commission, bid_ask_spread, data = sim_args
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params, carry_over_trades=False)
-    simulator = sim.Simulator(capital_base=10000, commission=commission, trading_algo=trading_algo, data=data)
+    simulator = sim.Simulator(capital_base=10000, commission=commission, tickers_spreads=bid_ask_spread,
+                              trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
     # Append parameters to trading statistics and several time series
@@ -35,7 +36,7 @@ class GridSearchOptimizer(Optimizer):
         self.param_sets = self.get_param_sets(self.param_spaces)
         self.num_param_sets = len(self.param_sets)
 
-    def run(self, trading_algo, commission, start_date, end_date):
+    def run(self, trading_algo, commission, tickers_spreads, start_date, end_date):
         results = list()
 
         # Get the trading algorithm's required window length
@@ -80,7 +81,8 @@ class GridSearchOptimizer(Optimizer):
             self.param_sets,
             itertools.repeat(trading_algo),
             itertools.repeat(commission),
-            itertools.repeat(data),
+            itertools.repeat(tickers_spreads),
+            itertools.repeat(data)
         )
 
         # Simulate all trading scenarios in parallel

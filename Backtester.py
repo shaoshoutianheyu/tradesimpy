@@ -13,22 +13,24 @@ import optimizers.OptimizerFactory as of
 
 
 class Backtester(object):
-    def __init__(self, opt_name, algo_name, long_only, capital_base, commission, tickers, start_date, end_date,
-                 in_sample_day_cnt, out_sample_day_cnt, carry_over_trades, opt_params, display_info=False):
+    def __init__(self, opt_name, opt_metric, opt_metric_asc, algo_name, long_only, capital_base, commission,
+                 tickers_spreads, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt, carry_over_trades,
+                 opt_params):
         # Data members
         self.opt_name = opt_name
+        self.opt_metric = opt_metric
+        self.opt_metric_asc = opt_metric_asc
         self.algo_name = algo_name
         self.long_only = long_only
         self.capital_base = capital_base
         self.commission = commission
-        self.tickers = tickers
+        self.tickers_spreads = tickers_spreads
         self.start_date = start_date
         self.end_date = end_date
         self.in_sample_day_cnt = in_sample_day_cnt
         self.out_sample_day_cnt = out_sample_day_cnt
         self.carry_over_trades = carry_over_trades
         self.opt_params = opt_params
-        self.display_info = display_info
 
         # TODO: Check if ticker(s) existed during period needed for backtesting
         # for ticker in tickers:
@@ -43,15 +45,14 @@ class Backtester(object):
         # Create list of date ranges for in-sample and out-of-sample periods
         self.sample_periods = self.create_sample_periods(start_date, end_date, in_sample_day_cnt, out_sample_day_cnt)
 
-        if display_info:
-            # Display sample period date ranges
-            print 'Sample periods:'
-            for sp in self.sample_periods:
-                print '    In:  %s - %s (%d)' %\
-                      (sp['in'][0].date(), sp['in'][1].date(), (sp['in'][1] - sp['in'][0]).days)
-                print '    Out: %s - %s (%d)' %\
-                      (sp['out'][0].date(), sp['out'][1].date(), (sp['out'][1] - sp['out'][0]).days)
-                print
+        # Display sample period date ranges
+        print 'Sample periods:'
+        for sp in self.sample_periods:
+            print '    In:  %s - %s (%d)' %\
+                  (sp['in'][0].date(), sp['in'][1].date(), (sp['in'][1] - sp['in'][0]).days)
+            print '    Out: %s - %s (%d)' %\
+                  (sp['out'][0].date(), sp['out'][1].date(), (sp['out'][1] - sp['out'][0]).days)
+            print
 
         # TODO: Pull data required for all in-sample and out-of-sample periods
 
@@ -65,10 +66,11 @@ class Backtester(object):
         capital_base = self.capital_base
 
         # Create trading algorithm, optimizer, and simulator
-        trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only, tickers=self.tickers)
+        trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only,
+                                               tickers=self.tickers_spreads.keys())
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
-        simulator =\
-            sim.Simulator(capital_base=capital_base, commission=self.commission, carry_over_trades=self.carry_over_trades)
+        simulator = sim.Simulator(capital_base=capital_base, commission=self.commission,
+                                  tickers_spreads=tickers_spreads, carry_over_trades=self.carry_over_trades)
 
         # Get the trading algorithm's required window length
         req_cnt = trading_algo.hist_window_length
@@ -83,19 +85,15 @@ class Backtester(object):
             # Optimize over in-sample data
             print 'Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date())
             start_time = time.time()
-            in_sample_results =\
-                optimizer.run(trading_algo=trading_algo, commission=self.commission, start_date=in_start, end_date=in_end)
+            in_sample_results = optimizer.run(trading_algo=trading_algo, commission=self.commission,
+                                              tickers_spreads=tickers_spreads, start_date=in_start, end_date=in_end)
             end_time = time.time()
             print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
             # Sort the results based on performance metrics and get parameters
             params = in_sample_results.sort(
-                # columns=['Sharpe Ratio'],
-                # ascending=[False]
-                # columns=['Sortino Ratio'],
-                # ascending=[False]
-                columns=['MAR Ratio'],
-                ascending=[False]
+                columns=[self.opt_metric],
+                ascending=[self.opt_metric_asc]
             )['Params'].head(1).values[0]
 
             # Set trading algorithm's parameters
@@ -105,7 +103,8 @@ class Backtester(object):
             data_start_date = out_start - BDay(req_cnt + 5)
 
             # Pull out-of-sample data
-            data = di.load_data(tickers=self.tickers, start=data_start_date.date(), end=out_end.date(), adjusted=True)
+            data = di.load_data(tickers=self.tickers_spreads.keys(), start=data_start_date.date(), end=out_end.date(),
+                                adjusted=True)
 
             # Grab only the required data
             for ticker in trading_algo.tickers:
@@ -180,12 +179,14 @@ if __name__ == '__main__':
 
     # Read in config parameters
     opt_name = configData['opt_method'].lower()
+    opt_metric = configData['opt_metric']
+    opt_metric_asc = bool(configData['opt_metric_asc'])
     algo_name = configData['algo_name'].lower()
     long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
     commission = float(configData['commission'])
     benchmark_ticker = configData['benchmark_ticker']
-    tickers = configData['tickers']
+    tickers_spreads = configData['tickers_spreads']
     start_date = pd.datetime.strptime(configData['start_date'], "%Y-%m-%d")
     end_date = pd.datetime.strptime(configData['end_date'], "%Y-%m-%d")
     in_sample_day_cnt = configData['in_sample_days']
@@ -196,19 +197,21 @@ if __name__ == '__main__':
     # Display inputted config parameters
     print '**********  BACKTEST CONFIGURATION PARAMETERS  **********'
     print 'Optimization method:     %s' % (opt_name)
+    print 'Optimize metric:         %s' % (opt_metric)
+    print 'Optimize metric ascend:  %s' % (opt_metric_asc)
     print 'Algorithm name:          %s' % (algo_name)
     print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
     print 'Commission:              %s' % (commission)
-    print 'Benchmark ticker:        %s' % (benchmark_ticker)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'In-sample day count:     %s' % (in_sample_day_cnt)
     print 'Out-of-sample day count: %s' % (out_sample_day_cnt)
     print 'Carry over trades:       %s' % (carry_over_trades)
-    print 'Ticker(s):'
-    for ticker in tickers:
-        print '                         %s' % (ticker)
+    print 'Benchmark ticker:        %s' % (benchmark_ticker)
+    print 'Tickers & BA spread(s):'
+    for key, value in tickers_spreads.iteritems():
+        print '                         %s: %s' % (key, value)
     print 'Hyper parameters:'
     for key, value in opt_params.iteritems():
         print '                         %s: %s' % (key, value)
@@ -217,18 +220,19 @@ if __name__ == '__main__':
 
     # Initialize and run backtest
     backtester = Backtester(opt_name=opt_name,
+                            opt_metric=opt_metric,
+                            opt_metric_asc=opt_metric_asc,
                             algo_name=algo_name,
                             long_only=long_only,
                             capital_base=capital_base,
                             commission=commission,
-                            tickers=tickers,
+                            tickers_spreads=tickers_spreads,
                             start_date=start_date,
                             end_date=end_date,
                             in_sample_day_cnt=in_sample_day_cnt,
                             out_sample_day_cnt=out_sample_day_cnt,
                             carry_over_trades=carry_over_trades,
-                            opt_params=opt_params,
-                            display_info=True)
+                            opt_params=opt_params)
     portfolio_stats, portfolio_series = backtester.run()
 
     # Pull benchmark stats
@@ -259,6 +263,9 @@ if __name__ == '__main__':
         [t['Average Winning Trade'] for t in portfolio_stats if not np.isnan(t['Average Winning Trade'])]
     backtest_avg_lose_trade =\
         [t['Average Losing Trade'] for t in portfolio_stats if not np.isnan(t['Average Losing Trade'])]
+    backtest_total_trades = np.sum([t['Total Trades'] for t in portfolio_stats])
+    backtest_win_trades = np.sum([t['Winning Trades'] for t in portfolio_stats])
+    backtest_lose_trades = np.sum([t['Losing Trades'] for t in portfolio_stats])
 
     # Display backtesting results
     print 'Backtest results:'
@@ -268,9 +275,9 @@ if __name__ == '__main__':
     print 'Sharpe Ratio:            %f' % (backtest_sharpe)
     print 'Sortino Ratio:           %f' % (backtest_sortino)
     print 'MAR Ratio:               %f' % (backtest_cagr / portfolio_stats[-1]['Max Drawdown'])
-    print 'Total Trades:            %d' % (np.sum([t['Total Trades'] for t in portfolio_stats]))
-    print 'Winning Trades:          %d' % (np.sum([t['Winning Trades'] for t in portfolio_stats]))
-    print 'Losing Trades:           %d' % (np.sum([t['Losing Trades'] for t in portfolio_stats]))
+    print 'Total Trades:            %d' % (backtest_total_trades)
+    print 'Percent Winning Trades:  %.2f' % (backtest_win_trades / float(backtest_total_trades))
+    print 'Percent Losing Trades:   %.2f' % (backtest_lose_trades / float(backtest_total_trades))
     print 'Average Winning Trades:  %f' % (np.sum(backtest_avg_win_trade) / len(backtest_avg_win_trade))
     print 'Average Losing Trades:   %f' % (np.sum(backtest_avg_lose_trade) / len(backtest_avg_lose_trade))
 

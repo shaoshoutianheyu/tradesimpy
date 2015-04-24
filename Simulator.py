@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 class Simulator(object):
-    def __init__(self, capital_base, commission, carry_over_trades=False, trading_algo=None, data=None):
+    def __init__(self, capital_base, commission, tickers_spreads, carry_over_trades=False, trading_algo=None, data=None):
         self.trading_algo = trading_algo
         self.data = data
         self.capital_base = capital_base
@@ -16,6 +16,7 @@ class Simulator(object):
         self.max_drawdown = 0.0
         self.carry_over_trades = carry_over_trades
         self.commission = commission
+        self.tickers_spreads = tickers_spreads
 
         self.purchased_shares = dict()
         self.prev_portfolio_value = self.capital_base
@@ -97,9 +98,9 @@ class Simulator(object):
                         for k, v in self.purchased_shares.iteritems():
                             current_invested_amount += v*self.data[k].loc[date, 'Open']
 
-                        # Determine how many shares to purchase
+                        # Determine at which share price to sell
                         # TODO: Introduce slippage here, set from config file
-                        share_price = self.data[key].loc[date, 'Open']
+                        share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
 
                         # Record commission
                         commissions[date] += self.commission
@@ -130,9 +131,9 @@ class Simulator(object):
                         del self.purchased_shares[key]
 
                     elif value['position'] == 1:  # Open long position
-                        # Determine how many shares to purchase
+                        # Determine at which share price to buy
                         # TODO: Introduce slippage here, set from config file
-                        share_price = self.data[key].loc[date, 'Open']
+                        share_price = (1 + self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
                         self.purchased_shares[key] =\
                             m.floor(self.prev_portfolio_value/share_price*value['portfolio_perc'])
 
@@ -159,7 +160,7 @@ class Simulator(object):
                         pass
                         # # Determine how many shares to purchase
                         # # TODO: Introduce slippage here, set from config file
-                        # share_price = self.data[key].loc[date, 'Open']
+                        # share_price = (1 - self.bid_ask_spread[key]/2) * self.data[key].loc[date, 'Open']
                         # purchased_shares[key] = -m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
                         #
                         # # Record commission
@@ -226,9 +227,9 @@ class Simulator(object):
                     for k, v in self.purchased_shares.iteritems():
                         current_invested_amount += v*self.data[k].loc[date, 'Open']
 
-                    # Determine how many shares to purchase
+                    # Determine at which share price to sell
                     # TODO: Introduce slippage here, set from config file
-                    share_price = self.data[key].loc[date, 'Open']
+                    share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
 
                     # Record commission
                     commissions[date] += self.commission

@@ -29,12 +29,14 @@ if __name__ == '__main__':
 
     # Read in config parameters
     opt_name = configData['opt_method'].lower()
+    opt_metric = configData['opt_metric']
+    opt_metric_asc = bool(configData['opt_metric_asc'])
     algo_name = configData['algo_name'].lower()
     long_only = bool(configData['long_only'])
     capital_base = float(configData['capital_base'])
     commission = float(configData['commission'])
     benchmark_ticker = configData['benchmark_ticker']
-    tickers = configData['tickers']
+    tickers_spreads = configData['tickers_spreads']
     start_date = datetime.strptime(configData['start_date'], '%Y-%m-%d')
     end_date = datetime.strptime(configData['end_date'], '%Y-%m-%d')
     opt_params = configData['opt_params']
@@ -42,16 +44,18 @@ if __name__ == '__main__':
     # Display inputted config parameters
     print '********  OPTIMIZATION CONFIGURATION PARAMETERS  ********'
     print 'Optimization method:     %s' % (opt_name)
+    print 'Optimize metric:         %s' % (opt_metric)
+    print 'Optimize metric ascend:  %s' % (opt_metric_asc)
     print 'Algorithm name:          %s' % (algo_name)
     print 'Long only:               %s' % (long_only)
     print 'Capital base:            %s' % (capital_base)
     print 'Commission:              %s' % (commission)
     print 'Start date:              %s' % (start_date)
-    print 'Benchmark:               %s' % (benchmark_ticker)
     print 'End date:                %s' % (end_date)
-    print 'Ticker(s):'
-    for ticker in tickers:
-        print '                         %s' % (ticker)
+    print 'Benchmark:               %s' % (benchmark_ticker)
+    print 'Tickers & BA spread(s):'
+    for key, value in tickers_spreads.iteritems():
+        print '                         %s: %s' % (key, value)
     print 'Hyper parameters:'
     for key, value in opt_params.iteritems():
         print '                         %s: %s' % (key, value)
@@ -59,23 +63,19 @@ if __name__ == '__main__':
     print
 
     # Create trading algorithm
-    trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers)
+    trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers_spreads.keys())
 
     # Create and run optimizer
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
     print 'Optimizing parameter set for dates %s to %s.' % (start_date, end_date)
     start_time = time.time()
-    results = optimizer.run(trading_algo, commission, start_date.date(), end_date.date())
+    results = optimizer.run(trading_algo=trading_algo, commission=commission, tickers_spreads=tickers_spreads,
+                            start_date=start_date.date(), end_date=end_date.date())
     end_time = time.time()
     print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
     # Sort optimization results
-    results.sort(
-        # columns=['Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown', 'CAGR', 'Total Trades'],
-        # ascending=[0, 0, 0, 0, 0],
-        columns=['MAR Ratio'],
-        ascending=[False],
-        inplace=True)
+    results.sort(columns=[opt_metric], ascending=[opt_metric_asc], inplace=True)
 
     # Pull benchmark stats
     benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=benchmark_ticker,
