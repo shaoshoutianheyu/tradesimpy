@@ -2,8 +2,8 @@ from TradingAlgorithm import TradingAlgorithm
 
 
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
-    def __init__(self, long_only, tickers, params):
-        super(MovingAverageDivergenceAlgorithm, self).__init__(long_only, tickers, params)
+    def __init__(self, long_only, tickers, params, is_open=None):
+        super(MovingAverageDivergenceAlgorithm, self).__init__(long_only, tickers, params, is_open)
 
         self.ma_long_window = 10
         self.ma_short_window = 2
@@ -26,8 +26,12 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
 
             if self.long_only:
                 # Monitor moving average crosses
-                if self.prev_ma_long < self.prev_ma_short and ma_long > ma_short:
-                    self.long_over_short_cross = True
+                if self.prev_ma_long == 0 and self.prev_ma_short == 0:
+                    if ma_long > ma_short:
+                        self.long_over_short_cross = True
+                else:
+                    if self.prev_ma_long < self.prev_ma_short and ma_long > ma_short:
+                        self.long_over_short_cross = True
 
                 # Only trade prior to a long-over-short moving average cross
                 if self.long_over_short_cross == True:
