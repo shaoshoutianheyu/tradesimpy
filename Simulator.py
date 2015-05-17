@@ -26,7 +26,7 @@ class Simulator(object):
         if trading_algo is not None and data is not None:
             # Determine trading start dates for each ticker
             for ticker in self.trading_algo.tickers:
-                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window].name
 
             # TODO: Make this more flexible for multiple tickers!
             self.dates =\
@@ -49,7 +49,7 @@ class Simulator(object):
 
             # Determine trading start dates for each ticker
             for ticker in self.trading_algo.tickers:
-                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window_length].name
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window].name
 
             # TODO: Make this more flexible for multiple tickers!
             self.dates =\
@@ -65,7 +65,7 @@ class Simulator(object):
         commissions = dict()
 
         # Initialize simulation results helper variables
-        algo_window_length = self.trading_algo.hist_window_length
+        algo_window_length = self.trading_algo.hist_window
         algo_data = dict()
 
         # Reset previous values if no trades should be carried over

@@ -40,7 +40,7 @@ class GridSearchOptimizer(Optimizer):
         results = list()
 
         # Get the trading algorithm's required window length
-        req_cnt = trading_algo.hist_window_length
+        req_cnt = trading_algo.hist_window
 
         # Adjust the date range to approximately accommodate for indicator window length
         data_start_date = start_date - BDay(req_cnt + self.ind_win_fudge_factor)

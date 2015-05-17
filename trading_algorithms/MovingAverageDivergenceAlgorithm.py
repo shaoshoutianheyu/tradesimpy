@@ -13,7 +13,7 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
         self.prev_ma_short = 0.0
 
         # Required property by all strategies
-        self.hist_window_length = self.ma_long_window
+        self.hist_window = self.ma_long_window
 
     def determine_trade_decision(self, data):
         trade_decision = dict()

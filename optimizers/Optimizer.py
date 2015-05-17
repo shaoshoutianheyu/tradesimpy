@@ -40,6 +40,7 @@ if __name__ == '__main__':
     start_date = datetime.strptime(configData['start_date'], '%Y-%m-%d')
     end_date = datetime.strptime(configData['end_date'], '%Y-%m-%d')
     opt_params = configData['opt_params']
+    hist_window = configData['hist_window']
 
     # Display inputted config parameters
     print '********  OPTIMIZATION CONFIGURATION PARAMETERS  ********'
@@ -62,8 +63,12 @@ if __name__ == '__main__':
     print '*********************************************************'
     print
 
+    # Pass necessary parameters
+    params = {'hist_window': hist_window}
+
     # Create trading algorithm
-    trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers_spreads.keys())
+    trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers_spreads.keys(),
+                                           params=params)
 
     # Create and run optimizer
     optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)

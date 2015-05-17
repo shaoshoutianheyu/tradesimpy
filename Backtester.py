@@ -15,7 +15,7 @@ import optimizers.OptimizerFactory as of
 class Backtester(object):
     def __init__(self, opt_name, opt_metric, opt_metric_asc, algo_name, long_only, capital_base, commission,
                  tickers_spreads, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt, carry_over_trades,
-                 opt_params):
+                 opt_params, params):
         # Data members
         self.opt_name = opt_name
         self.opt_metric = opt_metric
@@ -31,6 +31,7 @@ class Backtester(object):
         self.out_sample_day_cnt = out_sample_day_cnt
         self.carry_over_trades = carry_over_trades
         self.opt_params = opt_params
+        self.params = params
 
         # TODO: Check if ticker(s) existed during period needed for backtesting
         # for ticker in tickers:
@@ -67,13 +68,13 @@ class Backtester(object):
 
         # Create trading algorithm, optimizer, and simulator
         trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only,
-                                               tickers=self.tickers_spreads.keys())
+                                               tickers=self.tickers_spreads.keys(), params=self.params)
         optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
         simulator = sim.Simulator(capital_base=capital_base, commission=self.commission,
                                   tickers_spreads=tickers_spreads, carry_over_trades=self.carry_over_trades)
 
         # Get the trading algorithm's required window length
-        req_cnt = trading_algo.hist_window_length
+        req_cnt = trading_algo.hist_window
 
         # Backtest trading algorithm using walk forward analysis
         for periods in self.sample_periods:
@@ -193,6 +194,7 @@ if __name__ == '__main__':
     out_sample_day_cnt = configData['out_sample_days']
     carry_over_trades = bool(configData['carry_over_trades'])
     opt_params = configData['opt_params']
+    hist_window = configData['hist_window']
 
     # Display inputted config parameters
     print '**********  BACKTEST CONFIGURATION PARAMETERS  **********'
@@ -218,6 +220,9 @@ if __name__ == '__main__':
     print '*********************************************************'
     print
 
+    # Pass necessary parameters
+    params = {'hist_window': hist_window}
+
     # Initialize and run backtest
     backtester = Backtester(opt_name=opt_name,
                             opt_metric=opt_metric,
@@ -232,7 +237,8 @@ if __name__ == '__main__':
                             in_sample_day_cnt=in_sample_day_cnt,
                             out_sample_day_cnt=out_sample_day_cnt,
                             carry_over_trades=carry_over_trades,
-                            opt_params=opt_params)
+                            opt_params=opt_params,
+                            params=params)
     portfolio_stats, portfolio_series = backtester.run()
 
     # Pull benchmark stats
