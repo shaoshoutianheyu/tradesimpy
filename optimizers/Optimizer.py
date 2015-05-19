@@ -41,6 +41,8 @@ if __name__ == '__main__':
     end_date = datetime.strptime(configData['end_date'], '%Y-%m-%d')
     opt_params = configData['opt_params']
     hist_window = configData['hist_window']
+    min_trades = configData['min_trades']
+    # stop_loss_perc = configData['stop_loss_percent']
 
     # Display inputted config parameters
     print '********  OPTIMIZATION CONFIGURATION PARAMETERS  ********'
@@ -54,6 +56,9 @@ if __name__ == '__main__':
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
     print 'Benchmark:               %s' % (benchmark_ticker)
+    print 'Historical window:       %s' % (hist_window)
+    print 'Minimum trades:          %s' % (min_trades)
+    # print 'Stop loss percent:       %s' % (stop_loss_perc)
     print 'Tickers & BA spread(s):'
     for key, value in tickers_spreads.iteritems():
         print '                         %s: %s' % (key, value)
@@ -80,6 +85,7 @@ if __name__ == '__main__':
     print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
     # Sort optimization results
+    results = results[results['Total Trades'] >+ min_trades]
     results.sort(columns=[opt_metric], ascending=[opt_metric_asc], inplace=True)
 
     # Pull benchmark stats
@@ -98,12 +104,15 @@ if __name__ == '__main__':
     print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
-    top_scenarios = 10
+    if len(results) < 10:
+        top_scenarios = len(results)
+    else:
+        top_scenarios = 10
     port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
                                      index=benchmark_stats['Portfolio Value'].index,
                                      columns=[benchmark_ticker])
     for i in range(0, top_scenarios):
-        port_value_series[str(results.head(top_scenarios).iloc[i]['Params'])] =\
+        port_value_series[str(results.head(top_scenarios).index.values[i])] =\
             pd.Series(results.head(top_scenarios).iloc[i]['Portfolio Value'],
                 index=results.head(top_scenarios).iloc[i]['Portfolio Value'].keys())
 

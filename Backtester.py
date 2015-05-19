@@ -92,6 +92,7 @@ class Backtester(object):
             print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
             # Sort the results based on performance metrics and get parameters
+            in_sample_results = in_sample_results[in_sample_results['Total Trades'] >= self.params['min_trades']]
             params = in_sample_results.sort(
                 columns=[self.opt_metric],
                 ascending=[self.opt_metric_asc]
@@ -195,6 +196,7 @@ if __name__ == '__main__':
     carry_over_trades = bool(configData['carry_over_trades'])
     opt_params = configData['opt_params']
     hist_window = configData['hist_window']
+    min_trades = configData['min_trades']
 
     # Display inputted config parameters
     print '**********  BACKTEST CONFIGURATION PARAMETERS  **********'
@@ -211,6 +213,8 @@ if __name__ == '__main__':
     print 'Out-of-sample day count: %s' % (out_sample_day_cnt)
     print 'Carry over trades:       %s' % (carry_over_trades)
     print 'Benchmark ticker:        %s' % (benchmark_ticker)
+    print 'Historical window:       %s' % (hist_window)
+    print 'Minimum trades:          %s' % (min_trades)
     print 'Tickers & BA spread(s):'
     for key, value in tickers_spreads.iteritems():
         print '                         %s: %s' % (key, value)
@@ -221,7 +225,10 @@ if __name__ == '__main__':
     print
 
     # Pass necessary parameters
-    params = {'hist_window': hist_window}
+    params = {
+        'hist_window':  hist_window,
+        'min_trades':   min_trades
+    }
 
     # Initialize and run backtest
     backtester = Backtester(opt_name=opt_name,
