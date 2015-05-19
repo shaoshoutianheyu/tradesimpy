@@ -6,7 +6,8 @@ from pprint import pprint
 
 
 class Simulator(object):
-    def __init__(self, capital_base, commission, tickers_spreads, carry_over_trades=False, trading_algo=None, data=None):
+    def __init__(self, capital_base, commission, tickers_spreads, stop_loss_percent, carry_over_trades=False,
+                 trading_algo=None, data=None):
         self.trading_algo = trading_algo
         self.data = data
         self.capital_base = capital_base
@@ -17,7 +18,10 @@ class Simulator(object):
         self.carry_over_trades = carry_over_trades
         self.commission = commission
         self.tickers_spreads = tickers_spreads
+        self.stop_loss_percent = stop_loss_percent
 
+        self.open_share_price = dict()
+        self.stop_losses = dict()
         self.purchased_shares = dict()
         self.prev_portfolio_value = self.capital_base
         self.prev_cash_amount = self.capital_base
@@ -70,11 +74,12 @@ class Simulator(object):
 
         # Reset previous values if no trades should be carried over
         if not self.carry_over_trades:
+            self.stop_losses = dict()
             self.purchased_shares = dict()
             self.prev_portfolio_value = self.capital_base
             self.prev_cash_amount = self.capital_base
             self.prev_invested_amount = 0.0
-            self.open_share_price = 0.0
+            self.open_share_price = dict()
 
         # Iterate over all trading days
         for date in self.dates:
@@ -92,7 +97,7 @@ class Simulator(object):
             # Trade off of all trade decisions
             if len(trade_desc) != 0:
                 for key, value in trade_desc.iteritems():
-                    if value['position'] == 0:  # Close position
+                    if value['position'] == 0 and key in self.purchased_shares.keys():  # Close existing position
                         # Mark the portfolio to market
                         current_invested_amount = 0.0
                         for k, v in self.purchased_shares.iteritems():
@@ -120,17 +125,19 @@ class Simulator(object):
                         }
 
                         # Wining or losing trade
-                        if share_price > self.open_share_price:
+                        if share_price > self.open_share_price[key]:
                             winning_trade_cnt += 1
-                            winning_trade_returns.append((share_price / self.open_share_price) - 1)
+                            winning_trade_returns.append((share_price / self.open_share_price[key]) - 1)
                         else:
                             losing_trade_cnt += 1
-                            losing_trade_returns.append((share_price / self.open_share_price) - 1)
+                            losing_trade_returns.append((share_price / self.open_share_price[key]) - 1)
 
-                        # Remove purchased record
+                        # Remove purchased record and potential stop losses
                         del self.purchased_shares[key]
+                        if self.stop_loss_percent != 0:
+                            del self.stop_losses[key]
 
-                    elif value['position'] == 1:  # Open long position
+                    elif value['position'] == 1 and key not in self.purchased_shares.keys():  # Open long position
                         # Determine at which share price to buy
                         # TODO: Introduce slippage here, set from config file
                         share_price = (1 + self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
@@ -154,7 +161,52 @@ class Simulator(object):
                             'share_count': self.purchased_shares[key],
                             'share_price': share_price
                         }
-                        self.open_share_price = share_price
+                        self.open_share_price[key] = share_price
+
+                        # Set stop loss or trigger (if necessary)
+                        if self.stop_loss_percent != 0:
+                            stop_loss = share_price * (1 - self.stop_loss_percent)
+
+                            # Trigger stop loss (if necessary)
+                            if stop_loss >= self.data[key].loc[date, 'Low']:  # Close recently opened position
+                                # Mark the portfolio to market
+                                current_invested_amount = 0.0
+                                for k, v in self.purchased_shares.iteritems():
+                                    if key == k:
+                                        current_invested_amount += v*stop_loss
+                                    else:
+                                        current_invested_amount += v*self.data[k].loc[date, 'Close']
+
+                                # Record commission
+                                commissions[date] += self.commission
+
+                                # Sell shares for cash
+                                cash_amount[date] += self.purchased_shares[key]*stop_loss - self.commission
+
+                                # End of day invested amount
+                                invested_amount[date] = current_invested_amount - self.purchased_shares[key]*stop_loss
+
+                                # Record transaction
+                                # TODO: Append to list to accomodate for multiple daily transactions
+                                transactions[date][key] = {
+                                    'position': 0,
+                                    'share_count': self.purchased_shares[key],
+                                    'share_price': stop_loss
+                                }
+
+                                # Wining or losing trade (should always be a loss)
+                                if stop_loss > self.open_share_price[key]:
+                                    winning_trade_cnt += 1
+                                    winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                else:
+                                    losing_trade_cnt += 1
+                                    losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                # Remove purchased record
+                                del self.purchased_shares[key]
+                            else:
+                                self.stop_losses[key] = stop_loss
+
                     # TODO: Allow for short selling
                     elif value['position'] == -1:  # Open short position
                         pass
@@ -179,13 +231,112 @@ class Simulator(object):
                         #     'share_count': purchased_shares[key],
                         #     'share_price': share_price
                         # }
-            else:  # No trades, mark portfolio to market
+                    else:  # No trades, check for triggered stop losses and mark portfolio to market
+                        cash_amount[date] = self.prev_cash_amount
+
+                        if len(self.purchased_shares) != 0:
+                            temp_purchased_shares = self.purchased_shares.copy()
+
+                            # Determine current invested amount
+                            for key, value in temp_purchased_shares.iteritems():
+                                # Check potential triggered stop-losses for open orders
+                                if self.stop_loss_percent != 0:
+                                    stop_loss = self.stop_losses[key]
+
+                                    # TODO: Have this work for short positions too
+                                    if stop_loss >= self.data[key].loc[date, 'Low']:
+                                        # Mark the portfolio to market
+                                        current_invested_amount = 0.0
+                                        for k, v in self.purchased_shares.iteritems():
+                                            if key == k:
+                                                current_invested_amount += v*stop_loss
+                                            else:
+                                                current_invested_amount += v*self.data[k].loc[date, 'Close']
+
+                                        # Record commission
+                                        commissions[date] += self.commission
+
+                                        # Sell shares for cash
+                                        cash_amount[date] += value*stop_loss - self.commission
+
+                                        # End of day invested amount
+                                        invested_amount[date] = current_invested_amount - value*stop_loss
+
+                                        # Record transaction
+                                        # TODO: Append to list to accomodate for multiple daily transactions
+                                        transactions[date][key] = {
+                                            'position': 0,
+                                            'share_count': value,
+                                            'share_price': stop_loss
+                                        }
+
+                                        # Wining or losing trade (should always be a loss)
+                                        if stop_loss > self.open_share_price[key]:
+                                            winning_trade_cnt += 1
+                                            winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                        else:
+                                            losing_trade_cnt += 1
+                                            losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                        # Remove purchased record
+                                        del self.purchased_shares[key]
+                                    else:
+                                        invested_amount[date] += value*self.data[key].loc[date, 'Close']
+                                else:
+                                    invested_amount[date] += value*self.data[key].loc[date, 'Close']
+            else:  # No trades, check for triggered stop losses and mark portfolio to market
                 cash_amount[date] = self.prev_cash_amount
 
-                # Determine current invested amount
                 if len(self.purchased_shares) != 0:
-                    for key, value in self.purchased_shares.iteritems():
-                        invested_amount[date] += value*self.data[key].loc[date, 'Close']
+                    temp_purchased_shares = self.purchased_shares.copy()
+
+                    # Determine current invested amount
+                    for key, value in temp_purchased_shares.iteritems():
+                        # Check potential triggered stop-losses for open orders
+                        if self.stop_loss_percent != 0:
+                            stop_loss = self.stop_losses[key]
+
+                            # TODO: Have this work for short positions too
+                            if stop_loss >= self.data[key].loc[date, 'Low']:
+                                # Mark the portfolio to market
+                                current_invested_amount = 0.0
+                                for k, v in self.purchased_shares.iteritems():
+                                    if key == k:
+                                        current_invested_amount += v*stop_loss
+                                    else:
+                                        current_invested_amount += v*self.data[k].loc[date, 'Close']
+
+                                # Record commission
+                                commissions[date] += self.commission
+
+                                # Sell shares for cash
+                                cash_amount[date] += value*stop_loss - self.commission
+
+                                # End of day invested amount
+                                invested_amount[date] = current_invested_amount - value*stop_loss
+
+                                # Record transaction
+                                # TODO: Append to list to accomodate for multiple daily transactions
+                                transactions[date][key] = {
+                                    'position': 0,
+                                    'share_count': value,
+                                    'share_price': stop_loss
+                                }
+
+                                # Wining or losing trade (should always be a loss)
+                                if stop_loss > self.open_share_price[key]:
+                                    winning_trade_cnt += 1
+                                    winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                else:
+                                    losing_trade_cnt += 1
+                                    losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                # Remove purchased record
+                                del self.purchased_shares[key]
+                            else:
+                                invested_amount[date] += value*self.data[key].loc[date, 'Close']
+                        else:
+                            invested_amount[date] += value*self.data[key].loc[date, 'Close']
 
             # Record more trade stats
             portfolio_value[date] = cash_amount[date] + invested_amount[date]
@@ -221,6 +372,7 @@ class Simulator(object):
             # Close all open positions that exist
             if len(self.purchased_shares) != 0:
                 temp_purchased_shares = self.purchased_shares.copy()
+
                 for key, value in temp_purchased_shares.iteritems():
                     # Mark the portfolio to market
                     current_invested_amount = 0.0

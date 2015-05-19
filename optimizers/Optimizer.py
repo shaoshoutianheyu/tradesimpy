@@ -42,7 +42,7 @@ if __name__ == '__main__':
     opt_params = configData['opt_params']
     hist_window = configData['hist_window']
     min_trades = configData['min_trades']
-    # stop_loss_perc = configData['stop_loss_percent']
+    stop_loss_percent = configData['stop_loss_percent']
 
     # Display inputted config parameters
     print '********  OPTIMIZATION CONFIGURATION PARAMETERS  ********'
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     print 'Benchmark:               %s' % (benchmark_ticker)
     print 'Historical window:       %s' % (hist_window)
     print 'Minimum trades:          %s' % (min_trades)
-    # print 'Stop loss percent:       %s' % (stop_loss_perc)
+    print 'Stop loss percent:       %s' % (stop_loss_percent)
     print 'Tickers & BA spread(s):'
     for key, value in tickers_spreads.iteritems():
         print '                         %s: %s' % (key, value)
@@ -69,14 +69,17 @@ if __name__ == '__main__':
     print
 
     # Pass necessary parameters
-    params = {'hist_window': hist_window}
+    sys_params = {
+        'hist_window':          hist_window,
+        'stop_loss_percent':    stop_loss_percent
+    }
 
     # Create trading algorithm
     trading_algo = taf.create_trading_algo(algo_name=algo_name, long_only=long_only, tickers=tickers_spreads.keys(),
-                                           params=params)
+                                           params=sys_params)
 
     # Create and run optimizer
-    optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params)
+    optimizer = of.create_optimizer(opt_name=opt_name, opt_params=opt_params, sys_params=sys_params)
     print 'Optimizing parameter set for dates %s to %s.' % (start_date, end_date)
     start_time = time.time()
     results = optimizer.run(trading_algo=trading_algo, commission=commission, tickers_spreads=tickers_spreads,

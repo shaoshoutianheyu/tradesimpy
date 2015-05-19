@@ -15,7 +15,7 @@ import optimizers.OptimizerFactory as of
 class Backtester(object):
     def __init__(self, opt_name, opt_metric, opt_metric_asc, algo_name, long_only, capital_base, commission,
                  tickers_spreads, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt, carry_over_trades,
-                 opt_params, params):
+                 opt_params, sys_params):
         # Data members
         self.opt_name = opt_name
         self.opt_metric = opt_metric
@@ -31,7 +31,7 @@ class Backtester(object):
         self.out_sample_day_cnt = out_sample_day_cnt
         self.carry_over_trades = carry_over_trades
         self.opt_params = opt_params
-        self.params = params
+        self.sys_params = sys_params
 
         # TODO: Check if ticker(s) existed during period needed for backtesting
         # for ticker in tickers:
@@ -68,9 +68,10 @@ class Backtester(object):
 
         # Create trading algorithm, optimizer, and simulator
         trading_algo = taf.create_trading_algo(algo_name=self.algo_name, long_only=self.long_only,
-                                               tickers=self.tickers_spreads.keys(), params=self.params)
-        optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params)
+                                               tickers=self.tickers_spreads.keys(), params=self.sys_params)
+        optimizer = of.create_optimizer(opt_name=self.opt_name, opt_params=self.opt_params, sys_params=self.sys_params)
         simulator = sim.Simulator(capital_base=capital_base, commission=self.commission,
+                                  stop_loss_percent=self.sys_params['stop_loss_percent'],
                                   tickers_spreads=tickers_spreads, carry_over_trades=self.carry_over_trades)
 
         # Get the trading algorithm's required window length
@@ -92,7 +93,7 @@ class Backtester(object):
             print 'Finished in-sample optimization in %f seconds.\n' % (end_time - start_time)
 
             # Sort the results based on performance metrics and get parameters
-            in_sample_results = in_sample_results[in_sample_results['Total Trades'] >= self.params['min_trades']]
+            in_sample_results = in_sample_results[in_sample_results['Total Trades'] >= self.sys_params['min_trades']]
             params = in_sample_results.sort(
                 columns=[self.opt_metric],
                 ascending=[self.opt_metric_asc]
@@ -197,6 +198,7 @@ if __name__ == '__main__':
     opt_params = configData['opt_params']
     hist_window = configData['hist_window']
     min_trades = configData['min_trades']
+    stop_loss_percent = configData['stop_loss_percent']
 
     # Display inputted config parameters
     print '**********  BACKTEST CONFIGURATION PARAMETERS  **********'
@@ -215,6 +217,7 @@ if __name__ == '__main__':
     print 'Benchmark ticker:        %s' % (benchmark_ticker)
     print 'Historical window:       %s' % (hist_window)
     print 'Minimum trades:          %s' % (min_trades)
+    print 'Stop loss percent:       %s' % (stop_loss_percent)
     print 'Tickers & BA spread(s):'
     for key, value in tickers_spreads.iteritems():
         print '                         %s: %s' % (key, value)
@@ -225,9 +228,10 @@ if __name__ == '__main__':
     print
 
     # Pass necessary parameters
-    params = {
+    sys_params = {
         'hist_window':  hist_window,
-        'min_trades':   min_trades
+        'min_trades':   min_trades,
+        'stop_loss_percent': stop_loss_percent
     }
 
     # Initialize and run backtest
@@ -245,7 +249,7 @@ if __name__ == '__main__':
                             out_sample_day_cnt=out_sample_day_cnt,
                             carry_over_trades=carry_over_trades,
                             opt_params=opt_params,
-                            params=params)
+                            sys_params=sys_params)
     portfolio_stats, portfolio_series = backtester.run()
 
     # Pull benchmark stats

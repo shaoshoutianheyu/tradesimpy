@@ -11,12 +11,12 @@ from pprint import pprint
 
 def _simulation(sim_args):
     # Extract simulation arguments
-    params, trading_algo, commission, bid_ask_spread, data = sim_args
+    params, trading_algo, commission, stop_loss_percent, tickers_spreads, data = sim_args
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params, carry_over_trades=False)
-    simulator = sim.Simulator(capital_base=10000, commission=commission, tickers_spreads=bid_ask_spread,
-                              trading_algo=trading_algo, data=data)
+    simulator = sim.Simulator(capital_base=10000, commission=commission, stop_loss_percent=stop_loss_percent,
+                              tickers_spreads=tickers_spreads, trading_algo=trading_algo, data=data)
     period_results, daily_results = simulator.run()
 
     # Append parameters to trading statistics and several time series
@@ -29,12 +29,13 @@ def _simulation(sim_args):
 class GridSearchOptimizer(Optimizer):
     ind_win_fudge_factor = 5
 
-    def __init__(self, param_spaces):
+    def __init__(self, param_spaces, sys_params):
         super(GridSearchOptimizer, self).__init__(param_spaces)
 
         # Data members
         self.param_sets = self.get_param_sets(self.param_spaces)
         self.num_param_sets = len(self.param_sets)
+        self.stop_loss_percent = sys_params['stop_loss_percent']
 
     def run(self, trading_algo, commission, tickers_spreads, start_date, end_date):
         results = list()
@@ -67,9 +68,9 @@ class GridSearchOptimizer(Optimizer):
         #     trading_algo.set_parameters(params=params, carry_over_trades=False)
         #
         #     # Simulate the trading algorithm
-        #     simulator = sim.Simulator(capital_base=10000, commission=commission, trading_algo=trading_algo, data=data)
+        #     simulator = sim.Simulator(capital_base=10000, commission=commission, stop_loss_percent=self.stop_loss_percent,
+        #                               tickers_spreads=tickers_spreads, trading_algo=trading_algo, data=data)
         #     period_results, daily_results = simulator.run()
-        #     exit(1)
         #
         #     # Record scenario parameters and statistics
         #     period_results['Params'] = params
@@ -81,6 +82,7 @@ class GridSearchOptimizer(Optimizer):
             self.param_sets,
             itertools.repeat(trading_algo),
             itertools.repeat(commission),
+            itertools.repeat(self.stop_loss_percent),
             itertools.repeat(tickers_spreads),
             itertools.repeat(data)
         )
