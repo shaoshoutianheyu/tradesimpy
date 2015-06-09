@@ -135,6 +135,7 @@ if __name__ == '__main__':
     print results.head(top_scenarios)[
         ['Params',
          'Total Return',
+         'Annual Volatility',
          'CAGR',
          'Max Drawdown',
          'Sharpe Ratio',

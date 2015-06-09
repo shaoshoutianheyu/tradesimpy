@@ -262,12 +262,13 @@ if __name__ == '__main__':
 
     # Display benchmark results
     print 'Benchmark results:'
-    print 'Total Return:    %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
-    print 'CAGR:            %f' % (benchmark_stats['CAGR'])
-    print 'Max Drawdown:    %f' % (benchmark_stats['Max Drawdown'])
-    print 'Sharpe Ratio:    %f' % (benchmark_stats['Sharpe Ratio'])
-    print 'Sortino Ratio:   %f' % (benchmark_stats['Sortino Ratio'])
-    print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
+    print 'Total Return:        %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
+    print 'Annual Volatility    %f' % benchmark_stats['Return Std Dev']
+    print 'CAGR:                %f' % (benchmark_stats['CAGR'])
+    print 'Max Drawdown:        %f' % (benchmark_stats['Max Drawdown'])
+    print 'Sharpe Ratio:        %f' % (benchmark_stats['Sharpe Ratio'])
+    print 'Sortino Ratio:       %f' % (benchmark_stats['Sortino Ratio'])
+    print 'MAR Ratio:           %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Compute backtest stats
     years_traded = ((end_date - start_date).days + 1) / 365.0
@@ -289,6 +290,7 @@ if __name__ == '__main__':
     # Display backtesting results
     print 'Backtest results:'
     print 'Total Return:            %f' % (backtest_total_return - 1)
+    print 'Annual Volatility:       %f' % (backtest_std_dev)
     print 'CAGR:                    %f' % (backtest_cagr)
     print 'Max Drawdown:            %f' % (portfolio_stats[-1]['Max Drawdown'])
     print 'Sharpe Ratio:            %f' % (backtest_sharpe)
