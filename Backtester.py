@@ -11,10 +11,11 @@ import Simulator as sim
 import trading_algorithms.TradingAlgorithmFactory as taf
 import optimizers.OptimizerFactory as of
 
+YEARLY_TRADE_DAYS = 252
 
 class Backtester(object):
     def __init__(self, opt_name, opt_metric, opt_metric_asc, algo_name, long_only, capital_base, commission,
-                 tickers_spreads, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt, carry_over_trades,
+                 tickers_spreads, start_date, end_date, in_sample_year_cnt, out_sample_year_cnt, carry_over_trades,
                  opt_params, sys_params):
         # Data members
         self.opt_name = opt_name
@@ -27,8 +28,8 @@ class Backtester(object):
         self.tickers_spreads = tickers_spreads
         self.start_date = start_date
         self.end_date = end_date
-        self.in_sample_day_cnt = in_sample_day_cnt
-        self.out_sample_day_cnt = out_sample_day_cnt
+        self.in_sample_day_cnt = np.round(in_sample_year_cnt * YEARLY_TRADE_DAYS)
+        self.out_sample_day_cnt = np.round(out_sample_year_cnt * YEARLY_TRADE_DAYS)
         self.carry_over_trades = carry_over_trades
         self.opt_params = opt_params
         self.sys_params = sys_params
@@ -44,7 +45,8 @@ class Backtester(object):
             # print 'Backtest:    %s' % (startDate)
 
         # Create list of date ranges for in-sample and out-of-sample periods
-        self.sample_periods = self.create_sample_periods(start_date, end_date, in_sample_day_cnt, out_sample_day_cnt)
+        self.sample_periods = self.create_sample_periods(start_date, end_date, self.in_sample_day_cnt,
+                                                         self.out_sample_day_cnt)
 
         # Display sample period date ranges
         print 'Sample periods:'
@@ -192,8 +194,8 @@ if __name__ == '__main__':
     tickers_spreads = configData['tickers_spreads']
     start_date = pd.datetime.strptime(configData['start_date'], "%Y-%m-%d")
     end_date = pd.datetime.strptime(configData['end_date'], "%Y-%m-%d")
-    in_sample_day_cnt = configData['in_sample_days']
-    out_sample_day_cnt = configData['out_sample_days']
+    in_sample_year_cnt = configData['in_sample_years']
+    out_sample_year_cnt = configData['out_sample_years']
     carry_over_trades = bool(configData['carry_over_trades'])
     opt_params = configData['opt_params']
     hist_window = configData['hist_window']
@@ -211,8 +213,8 @@ if __name__ == '__main__':
     print 'Commission:              %s' % (commission)
     print 'Start date:              %s' % (start_date)
     print 'End date:                %s' % (end_date)
-    print 'In-sample day count:     %s' % (in_sample_day_cnt)
-    print 'Out-of-sample day count: %s' % (out_sample_day_cnt)
+    print 'In-sample years          %s' % in_sample_year_cnt
+    print 'Out-sample years         %s' % out_sample_year_cnt
     print 'Carry over trades:       %s' % (carry_over_trades)
     print 'Benchmark ticker:        %s' % (benchmark_ticker)
     print 'Historical window:       %s' % (hist_window)
@@ -245,8 +247,8 @@ if __name__ == '__main__':
                             tickers_spreads=tickers_spreads,
                             start_date=start_date,
                             end_date=end_date,
-                            in_sample_day_cnt=in_sample_day_cnt,
-                            out_sample_day_cnt=out_sample_day_cnt,
+                            in_sample_year_cnt=in_sample_year_cnt,
+                            out_sample_year_cnt=out_sample_year_cnt,
                             carry_over_trades=carry_over_trades,
                             opt_params=opt_params,
                             sys_params=sys_params)
