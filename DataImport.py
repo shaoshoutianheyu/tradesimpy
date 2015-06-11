@@ -1,8 +1,13 @@
-import pandas.io.data as web
 import numpy as np
+import pandas.io.data as web
+from pandas.tseries.offsets import BDay
 
 
-def load_data(tickers, start, end, adjusted):
+def load_data(tickers, start, end, adjusted, prev_data_size=None):
+    if prev_data_size is not None:
+        original_start = start
+        start = original_start - BDay(prev_data_size + 5)
+
     data = web.DataReader(tickers, data_source='yahoo', start=start, end=end)
 
     if adjusted:
@@ -20,6 +25,19 @@ def load_data(tickers, start, end, adjusted):
     result = dict()
     for ticker in tickers:
         result[ticker] = data.minor_xs(ticker)
+
+    # Extend data to accommodate for valid previous data
+    if prev_data_size is not None:
+        for ticker in tickers:
+            start = original_start
+
+            # Start on valid date
+            while start not in result[ticker].index:
+                start += BDay(1)
+
+            # Grab only the required data
+            start_idx = result[ticker][:start][-prev_data_size:].index.tolist()[0]
+            result[ticker] = result[ticker][start_idx:]
 
     return result
 

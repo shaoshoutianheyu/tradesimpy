@@ -99,12 +99,13 @@ if __name__ == '__main__':
 
     # Display benchmark results
     print 'Benchmark results:'
-    print 'Total Return:    %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
-    print 'CAGR:            %f' % (benchmark_stats['CAGR'])
-    print 'Max Drawdown:    %f' % (benchmark_stats['Max Drawdown'])
-    print 'Sharpe Ratio:    %f' % (benchmark_stats['Sharpe Ratio'])
-    print 'Sortino Ratio:   %f' % (benchmark_stats['Sortino Ratio'])
-    print 'MAR Ratio:       %f\n' % (benchmark_stats['MAR Ratio'])
+    print 'Total Return:        %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
+    print 'Annual Volatility    %f' % benchmark_stats['Return Std Dev']
+    print 'CAGR:                %f' % (benchmark_stats['CAGR'])
+    print 'Max Drawdown:        %f' % (benchmark_stats['Max Drawdown'])
+    print 'Sharpe Ratio:        %f' % (benchmark_stats['Sharpe Ratio'])
+    print 'Sortino Ratio:       %f' % (benchmark_stats['Sortino Ratio'])
+    print 'MAR Ratio:           %f\n' % (benchmark_stats['MAR Ratio'])
 
     # Display a plot of the top N scenarios' portfolio value from the sorted results
     if len(results) < 10:
