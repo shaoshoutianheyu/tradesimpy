@@ -1,2 +1,2 @@
 # TradeSimPy
-A simple algorithmic trading simulator for backtesting purposes.
+A simple algorithmic trading simulation framework for optimization and backtesting purposes.
