@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from pprint import pprint
 
+
 class Optimizer(object):
+
     def __init__(self, param_spaces):
         # Data members
         self.param_spaces = param_spaces

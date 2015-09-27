@@ -2,11 +2,12 @@ from TradingAlgorithm import TradingAlgorithm
 
 
 class OuterInnerWatermarkAlgorithm(TradingAlgorithm):
-    def __init__(self, long_only, tickers, params, indicator, is_open=None):
+
+    def __init__(self, long_only, tickers, params, indicator, hist_window, is_open=None):
         super(OuterInnerWatermarkAlgorithm, self).__init__(long_only, tickers, params, is_open)
 
         self.indicator = indicator
-        self.hist_window = params['hist_window']
+        self.hist_window = hist_window
         self.prev_ind_value = dict()
 
         for ticker in tickers:

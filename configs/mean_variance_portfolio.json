@@ -1,0 +1,41 @@
+{
+  "opt_method"        : "mean_variance",
+  "opt_metric"        : "",
+  "opt_metric_asc"    : 0,
+  "algo_name"         : "ma_div",
+  "long_only"         : 1,
+  "capital_base"      : 10000,
+  "commission"        : 1.0,
+  "start_date"        : "2013-01-01",
+  "end_date"          : "2014-12-31",
+  "in_sample_years"   : 2,
+  "out_sample_years"  : 0.25,
+  "carry_over_trades" : 1,
+  "benchmark_ticker"  : "SPY",
+  "tickers_spreads"   : {
+                          "VTI": 0.0001,
+                          "VOO": 0.0001,
+                          "VIG": 0.0001,
+                          "VEA": 0.0001,
+                          "VWO": 0.0001,
+                          "VNQ": 0.0001,
+                          "BND": 0.0001
+                        },
+  "hist_window"       : 0,
+  "min_trades"        : 0,
+  "stop_loss_percent" : 0.0,
+  "opt_params"        : {
+                          "ticker_weight_ranges" : {
+                                                      "VTI": [0.0, 1.0],
+                                                      "VOO": [0.0, 1.0],
+                                                      "VIG": [0.0, 1.0],
+                                                      "VEA": [0.0, 1.0],
+                                                      "VWO": [0.0, 1.0],
+                                                      "VNQ": [0.0, 1.0],
+                                                      "BND": [0.0, 1.0]
+                                                    },
+                          "num_portfolios"    : 100,
+                          "confidence"        : 0.95,
+                          "target_std_dev"    : 0.10
+                        }
+}

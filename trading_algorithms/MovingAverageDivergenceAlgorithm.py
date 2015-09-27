@@ -2,6 +2,7 @@ from TradingAlgorithm import TradingAlgorithm
 
 
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
+
     def __init__(self, long_only, tickers, params, is_open=None):
         super(MovingAverageDivergenceAlgorithm, self).__init__(long_only, tickers, params, is_open)
 

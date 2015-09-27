@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandas.tseries.offsets import BDay
-from pprint import pprint
+# from pprint import pprint
 
 
 def _simulation(sim_args):
@@ -29,15 +29,20 @@ def _simulation(sim_args):
 class GridSearchOptimizer(Optimizer):
     ind_win_fudge_factor = 5
 
-    def __init__(self, param_spaces, sys_params):
+    def __init__(self, param_spaces, commission, stop_loss_percent, tickers_spreads, min_trades, opt_metric, opt_metric_asc):
         super(GridSearchOptimizer, self).__init__(param_spaces)
 
         # Data members
         self.param_sets = self.get_param_sets(self.param_spaces)
         self.num_param_sets = len(self.param_sets)
-        self.stop_loss_percent = sys_params['stop_loss_percent']
+        self.commission = commission
+        self.stop_loss_percent = stop_loss_percent
+        self.tickers_spreads = tickers_spreads
+        self.min_trades = min_trades
+        self.opt_metric = opt_metric
+        self.opt_metric_asc = opt_metric_asc
 
-    def run(self, trading_algo, commission, tickers_spreads, start_date, end_date):
+    def run(self, trading_algo, start_date, end_date):
         results = list()
 
         # Get the trading algorithm's required window length
@@ -81,17 +86,25 @@ class GridSearchOptimizer(Optimizer):
         simulation_args = itertools.izip(
             self.param_sets,
             itertools.repeat(trading_algo),
-            itertools.repeat(commission),
+            itertools.repeat(self.commission),
             itertools.repeat(self.stop_loss_percent),
-            itertools.repeat(tickers_spreads),
+            itertools.repeat(self.tickers_spreads),
             itertools.repeat(data)
         )
 
         # Simulate all trading scenarios in parallel
-        pool = mp.Pool(processes=mp.cpu_count())
+        pool = mp.Pool(processes=mp.cpu_count() / 2)
         results = pool.map(func=_simulation, iterable=simulation_args)
+        results = pd.DataFrame(results)
 
-        return pd.DataFrame(results)
+        # Sort the results based on performance metrics and get parameters
+        results = results[results['Total Trades'] >= self.min_trades]
+        params = results.sort(
+            columns=[self.opt_metric],
+            ascending=[self.opt_metric_asc]
+        )['Params'].head(1).values[0]
+
+        return params
 
     # Generate parameter sets for each scenario
     # TODO: Build parameter sets based on the long_only and opt_params settings from config file

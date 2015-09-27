@@ -14,7 +14,7 @@
   "benchmark_ticker"  : "SPY",
   "tickers_spreads"   : {"SPY": 0.0001},
   "hist_window"       : 20,
-  "min_trades"        : 30,
+  "min_trades"        : 0,
   "stop_loss_percent" : 0.00,
   "opt_params"        : {
                           "open_long"     : [0, 5, 6],

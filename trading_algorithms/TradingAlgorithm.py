@@ -1,4 +1,5 @@
 class TradingAlgorithm(object):
+
     def __init__(self, long_only, tickers, params, is_open=None):
         # Data members
         self.long_only = long_only

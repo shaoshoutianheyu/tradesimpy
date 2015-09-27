@@ -2,10 +2,11 @@ from simulator_import import *
 import math as m
 import numpy as np
 import pandas as pd
-from pprint import pprint
+# from pprint import pprint
 
 
 class Simulator(object):
+
     def __init__(self, capital_base, commission, tickers_spreads, stop_loss_percent, carry_over_trades=False,
                  trading_algo=None, data=None):
         self.trading_algo = trading_algo

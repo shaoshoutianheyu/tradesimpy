@@ -1,6 +1,6 @@
 {
   "opt_method"        : "grid_search",
-  "opt_metric"        : "MAR Ratio",
+  "opt_metric"        : "Sharpe Ratio",
   "opt_metric_asc"    : 0,
   "algo_name"         : "lse_angle_outerinnerwatermark",
   "long_only"         : 1,
@@ -14,7 +14,7 @@
   "benchmark_ticker"  : "SPY",
   "tickers_spreads"   : {"SPY": 0.0001},
   "hist_window"       : 30,
-  "min_trades"        : 8,
+  "min_trades"        : 30,
   "stop_loss_percent" : 0.0,
   "opt_params"        : {
                           "open_long"         : [-20, 20, 11],
