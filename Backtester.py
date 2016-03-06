@@ -67,9 +67,11 @@ class Backtester(object):
             # Get optimal parameters based on performance metric and historical time horizon
             print('Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date()))
             start_time = time.time()
-            algo_params = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
+            # algo_params = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
+            optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
             end_time = time.time()
             print('Finished in-sample optimization in %f seconds.\n' % (end_time - start_time))
+            algo_params = optimizer.params
 
             # Set trading algorithm's parameters
             trading_algo.set_parameters(params=algo_params, carry_over_trades=self.params.carry_over_trades)

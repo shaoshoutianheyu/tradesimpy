@@ -1,16 +1,16 @@
 {
-  "opt_method"        : "mean_variance",
+  "opt_method"        : "grid_search",
   "opt_metric"        : "",
   "opt_metric_asc"    : 0,
-  "algo_name"         : "ma_div",
+  "algo_name"         : "mean_cvar_strategic_allocation",
   "long_only"         : 1,
   "capital_base"      : 10000,
-  "commission"        : 1.0,
+  "commission"        : 0.0,
   "start_date"        : "2013-01-01",
   "end_date"          : "2014-12-31",
   "in_sample_years"   : 2,
   "out_sample_years"  : 0.25,
-  "carry_over_trades" : 1,
+  "carry_over_trades" : 0,
   "benchmark_ticker"  : "SPY",
   "tickers_spreads"   : {
                           "VTI": 0.0001,
@@ -24,18 +24,20 @@
   "hist_window"       : 0,
   "min_trades"        : 0,
   "stop_loss_percent" : 0.0,
+  "std_dev_preference": 0.10,
+  "num_std_devs"      : 100,
+  "return_resolution" : 0.001,
+  "ticker_weights_range" : {
+                          "VTI": [0.10, 0.55],
+                          "VOO": [0.10, 0.55],
+                          "VIG": [0.05, 0.40],
+                          "VEA": [0.05, 0.30],
+                          "VWO": [0.05, 0.20],
+                          "VNQ": [0.05, 0.20],
+                          "BND": [0.05, 0.20]
+                        },
   "opt_params"        : {
-                          "ticker_weight_ranges" : {
-                                                      "VTI": [0.0, 1.0],
-                                                      "VOO": [0.0, 1.0],
-                                                      "VIG": [0.0, 1.0],
-                                                      "VEA": [0.0, 1.0],
-                                                      "VWO": [0.0, 1.0],
-                                                      "VNQ": [0.0, 1.0],
-                                                      "BND": [0.0, 1.0]
-                                                    },
-                          "num_portfolios"    : 100,
-                          "confidence"        : 0.95,
-                          "target_std_dev"    : 0.10
+                          "confidence_level"    : [0.90, 0.99, 10],
+                          "rebalance_threshold" : [0.05, 0.20, 16]
                         }
 }

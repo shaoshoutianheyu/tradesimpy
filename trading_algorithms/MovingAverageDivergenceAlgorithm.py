@@ -35,7 +35,7 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
                         self.long_over_short_cross = True
 
                 # Only trade prior to a long-over-short moving average cross
-                if self.long_over_short_cross == True:
+                if self.long_over_short_cross is True:
                     # Decide whether or not to open a long position
                     if not self.is_open[ticker] and ma_diff > self.params['open_long']:
                         self.is_open[ticker] = True
@@ -54,7 +54,7 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
                     self.short_over_long_cross = True
 
                 # Only trade prior to a long-over-short or short-over-long moving average cross
-                if self.long_over_short_cross == True:
+                if self.long_over_short_cross is True:
                     # Decide whether or not to open a long position
                     if not self.is_open[ticker] and ma_diff > self.params['open_long']:
                         self.is_open[ticker] = True
@@ -63,7 +63,7 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
                         self.is_open[ticker] = False
                         trade_decision[ticker] = {'position': 0, 'portfolio_perc': 0.0}
                         self.long_over_short_cross = False
-                elif self.short_over_long_cross == True:
+                elif self.short_over_long_cross is True:
                     # Decide whether or not to open a short position
                     if not self.is_open[ticker] and ma_diff < self.params['open_short']:
                         self.is_open[ticker] = True

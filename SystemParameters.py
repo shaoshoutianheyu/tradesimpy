@@ -1,10 +1,11 @@
 import pandas as pd
 
 
+# TODO: Implement different parameter classes for different types of algorithms (e.g., signal vs. portfolio allocation)
 class SystemParameters(object):
 
     def __init__(self, configData):
-        # Read in config parameters
+        # General config parameters
         self.opt_name = configData['opt_method'].lower()
         self.opt_metric = configData['opt_metric']
         self.opt_metric_asc = bool(configData['opt_metric_asc'])
@@ -20,9 +21,17 @@ class SystemParameters(object):
         self.out_sample_year_cnt = configData['out_sample_years']
         self.carry_over_trades = bool(configData['carry_over_trades'])
         self.opt_params = configData['opt_params']
+
+        # Signal config parameters
         self.hist_window = configData['hist_window']
         self.min_trades = configData['min_trades']
         self.stop_loss_percent = configData['stop_loss_percent']
+
+        # # Portfolio allocation config parameters
+        # self.return_resolution = float(configData['return_resolution'])
+        # self.std_dev_preference = float(configData['std_dev_preference'])
+        # self.num_std_devs = configData['num_std_devs']
+        # self.ticker_weights_range = configData['ticker_weights_range']
 
     def display(self):
         print('**********  SYSTEM CONFIGURATION PARAMETERS  **********')

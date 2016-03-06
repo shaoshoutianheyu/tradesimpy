@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandas.tseries.offsets import BDay
-# from pprint import pprint
+from pprint import pprint
 
 
 def _simulation(sim_args):
@@ -29,6 +29,7 @@ def _simulation(sim_args):
 class GridSearchOptimizer(Optimizer):
     ind_win_fudge_factor = 5
 
+    # TODO: Stop loss percent should be a parameter for the underlying algorithm
     def __init__(self, param_spaces, commission, stop_loss_percent, tickers_spreads, min_trades, opt_metric, opt_metric_asc):
         super(GridSearchOptimizer, self).__init__(param_spaces)
 
@@ -43,9 +44,10 @@ class GridSearchOptimizer(Optimizer):
         self.opt_metric_asc = opt_metric_asc
 
     def run(self, trading_algo, start_date, end_date):
-        results = list()
+        results = []
 
         # Get the trading algorithm's required window length
+        # TODO: hist_window needs to be relocated so algos that don't require it don't need to store it
         req_cnt = trading_algo.hist_window
 
         # Adjust the date range to approximately accommodate for indicator window length
@@ -68,15 +70,15 @@ class GridSearchOptimizer(Optimizer):
         #     # print "\nScenario parameters:"
         #     # for key, value in params.iteritems():
         #     #     print "    %s: %f" % (key, value)
-        #
+
         #     # Set the trading algorithm's parameters
         #     trading_algo.set_parameters(params=params, carry_over_trades=False)
-        #
+
         #     # Simulate the trading algorithm
-        #     simulator = sim.Simulator(capital_base=10000, commission=commission, stop_loss_percent=self.stop_loss_percent,
-        #                               tickers_spreads=tickers_spreads, trading_algo=trading_algo, data=data)
+        #     simulator = sim.Simulator(capital_base=10000, commission=self.commission, stop_loss_percent=self.stop_loss_percent,
+        #                               tickers_spreads=self.tickers_spreads, trading_algo=trading_algo, data=data)
         #     period_results, daily_results = simulator.run()
-        #
+
         #     # Record scenario parameters and statistics
         #     period_results['Params'] = params
         #     period_results['Portfolio Value'] = daily_results['Portfolio Value']
@@ -104,15 +106,17 @@ class GridSearchOptimizer(Optimizer):
             ascending=[self.opt_metric_asc]
         )['Params'].head(1).values[0]
 
-        return params
+        self.params = params
+        # return params
+        return results
 
     # Generate parameter sets for each scenario
     # TODO: Build parameter sets based on the long_only and opt_params settings from config file
     @staticmethod
     def get_param_sets(param_spaces):
-        discrete_param_spaces = list()
-        param_names = list()
-        param_sets = list()
+        discrete_param_spaces = []
+        param_names = []
+        param_sets = []
 
         # Discretize each parameter space
         for key, value in param_spaces.iteritems():
@@ -128,7 +132,7 @@ class GridSearchOptimizer(Optimizer):
 
         # Build proper output structure
         for p in temp_param_sets:
-            params = dict()
+            params = {}
             for i in range(0, len(p)):
                 params[param_names[i]] = p[i]
 

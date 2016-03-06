@@ -8,7 +8,7 @@ class TradingAlgorithm(object):
         self.params = params
 
         if is_open is None:
-            self.is_open = dict()
+            self.is_open = {}
 
             for ticker in self.tickers:
                 self.is_open[ticker] = False

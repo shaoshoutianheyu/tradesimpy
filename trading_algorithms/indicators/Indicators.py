@@ -15,6 +15,7 @@ def sobel_operator(data, params):
 
     return edge[-delay]
 
+
 def least_squares_angle(data, params):
     # Initialize parameters and structures
     sigma = params['sigma']

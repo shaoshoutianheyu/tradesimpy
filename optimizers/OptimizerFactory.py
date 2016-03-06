@@ -1,5 +1,5 @@
 from GridSearchOptimizer import GridSearchOptimizer
-# from MeanVarianceOptimizer import MeanVarianceOptimizer
+# from MeanCVaROptimizer import MeanCVaROptimizer
 import exceptions as ex
 
 
@@ -15,12 +15,5 @@ def create_optimizer(params):
             min_trades=params.min_trades,
             opt_metric=params.opt_metric,
             opt_metric_asc=params.opt_metric_asc)
-    elif opt_name == 'mean_variance':
-        pass
-        # return MeanVarianceOptimizer(opt_params, sys_params)
-    elif opt_name == 'mean_var':
-        pass
-    elif opt_name == 'mean_cvar':
-        pass
     else:
         ex.AttributeError.message('ERROR: Unknown optimizer name %s' % (opt_name))

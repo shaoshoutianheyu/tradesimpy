@@ -55,3 +55,12 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Images
+*.png
+
+# Data ouputs
+*.csv
+
+# Sublime stuff
+*.sublime-workspace

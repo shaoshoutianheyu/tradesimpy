@@ -16,6 +16,10 @@
   "hist_window"       : 20,
   "min_trades"        : 0,
   "stop_loss_percent" : 0.00,
+  "std_dev_preference": 0,
+  "num_std_devs"      : 0,
+  "return_resolution" : 0,
+  "ticker_weights_range" : { },
   "opt_params"        : {
                           "open_long"     : [0, 5, 6],
                           "close_long"    : [0, 5, 6],
