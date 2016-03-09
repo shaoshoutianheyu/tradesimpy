@@ -95,67 +95,67 @@ if __name__ == '__main__':
     end_time = time.time()
     print('Finished in-sample optimization in %f seconds.\n' % (end_time - start_time))
 
-    pprint(results)
+    # pprint(results)
 
-    # Sort optimization results
-    results = results[results['Total Trades'] >= params.min_trades]
-    results.sort(columns=[params.opt_metric], ascending=[params.opt_metric_asc], inplace=True)
+    # # Sort optimization results
+    # results = results[results['Total Trades'] >= params.min_trades]
+    # results.sort(columns=[params.opt_metric], ascending=[params.opt_metric_asc], inplace=True)
 
-    # Pull benchmark stats
-    benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=params.benchmark_ticker,
-                                                  start_date=params.start_date,
-                                                  end_date=params.end_date,
-                                                  capital_base=params.capital_base)
+    # # Pull benchmark stats
+    # benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=params.benchmark_ticker,
+    #                                               start_date=params.start_date,
+    #                                               end_date=params.end_date,
+    #                                               capital_base=params.capital_base)
 
-    # Display benchmark results
-    print 'Benchmark results:'
-    print 'Total Return:        %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
-    print 'Annual Volatility    %f' % benchmark_stats['Return Std Dev']
-    print 'CAGR:                %f' % (benchmark_stats['CAGR'])
-    print 'Max Drawdown:        %f' % (benchmark_stats['Max Drawdown'])
-    print 'Sharpe Ratio:        %f' % (benchmark_stats['Sharpe Ratio'])
-    print 'Sortino Ratio:       %f' % (benchmark_stats['Sortino Ratio'])
-    print 'MAR Ratio:           %f\n' % (benchmark_stats['MAR Ratio'])
+    # # Display benchmark results
+    # print 'Benchmark results:'
+    # print 'Total Return:        %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1)
+    # print 'Annual Volatility    %f' % benchmark_stats['Return Std Dev']
+    # print 'CAGR:                %f' % (benchmark_stats['CAGR'])
+    # print 'Max Drawdown:        %f' % (benchmark_stats['Max Drawdown'])
+    # print 'Sharpe Ratio:        %f' % (benchmark_stats['Sharpe Ratio'])
+    # print 'Sortino Ratio:       %f' % (benchmark_stats['Sortino Ratio'])
+    # print 'MAR Ratio:           %f\n' % (benchmark_stats['MAR Ratio'])
 
-    # Display a plot of the top N scenarios' portfolio value from the sorted results
-    if len(results) < 10:
-        top_scenarios = len(results)
-    else:
-        top_scenarios = 10
-    port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
-                                     index=benchmark_stats['Portfolio Value'].index,
-                                     columns=[params.benchmark_ticker])
-    for i in range(0, top_scenarios):
-        port_value_series[str(results.head(top_scenarios).index.values[i])] =\
-            pd.Series(results.head(top_scenarios).iloc[i]['Portfolio Value'],
-                index=results.head(top_scenarios).iloc[i]['Portfolio Value'].keys())
+    # # Display a plot of the top N scenarios' portfolio value from the sorted results
+    # if len(results) < 10:
+    #     top_scenarios = len(results)
+    # else:
+    #     top_scenarios = 10
+    # port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
+    #                                  index=benchmark_stats['Portfolio Value'].index,
+    #                                  columns=[params.benchmark_ticker])
+    # for i in range(0, top_scenarios):
+    #     port_value_series[str(results.head(top_scenarios).index.values[i])] =\
+    #         pd.Series(results.head(top_scenarios).iloc[i]['Portfolio Value'],
+    #             index=results.head(top_scenarios).iloc[i]['Portfolio Value'].keys())
 
-    plot = port_value_series.plot(title='Portfolio Value of Top %d Scenarios and Benchmark' % (top_scenarios),
-                                  legend=False,
-                                  colormap='rainbow')
-    plot.set_xlabel('Date')
-    plot.set_ylabel('Porfolio Value')
-    plot.legend(loc=2, prop={'size': 10})
+    # plot = port_value_series.plot(title='Portfolio Value of Top %d Scenarios and Benchmark' % (top_scenarios),
+    #                               legend=False,
+    #                               colormap='rainbow')
+    # plot.set_xlabel('Date')
+    # plot.set_ylabel('Porfolio Value')
+    # plot.legend(loc=2, prop={'size': 10})
 
-    # Output relevant optimization results to csv file
-    filename = '%s.%s.%s.csv' % (params.algo_name, params.opt_name, datetime.now())
-    del results['Portfolio Value']
-    results.to_csv(filename, index=False)
+    # # Output relevant optimization results to csv file
+    # filename = '%s.%s.%s.csv' % (params.algo_name, params.opt_name, datetime.now())
+    # del results['Portfolio Value']
+    # results.to_csv(filename, index=False)
 
-    print 'Top %d scenario results:' % (top_scenarios)
-    print results.head(top_scenarios)[
-        ['Params',
-         'Total Return',
-         'Annual Volatility',
-         'CAGR',
-         'Max Drawdown',
-         'Sharpe Ratio',
-         'Sortino Ratio',
-         'MAR Ratio',
-         'Total Trades',
-         'Winning Trades',
-         'Losing Trades',
-         'Average Winning Trade',
-         'Average Losing Trade']
-    ]
-    plt.show()
+    # print 'Top %d scenario results:' % (top_scenarios)
+    # print results.head(top_scenarios)[
+    #     ['Params',
+    #      'Total Return',
+    #      'Annual Volatility',
+    #      'CAGR',
+    #      'Max Drawdown',
+    #      'Sharpe Ratio',
+    #      'Sortino Ratio',
+    #      'MAR Ratio',
+    #      'Total Trades',
+    #      'Winning Trades',
+    #      'Losing Trades',
+    #      'Average Winning Trade',
+    #      'Average Losing Trade']
+    # ]
+    # plt.show()

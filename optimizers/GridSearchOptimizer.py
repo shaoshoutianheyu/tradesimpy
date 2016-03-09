@@ -1,5 +1,5 @@
 from Optimizer import Optimizer
-import Simulator as sim
+import Backtester as b
 import DataImport
 import itertools
 import numpy as np
@@ -15,15 +15,16 @@ def _simulation(sim_args):
 
     # Simulate the trading algorithm with distinct parameters
     trading_algo.set_parameters(params=params, carry_over_trades=False)
-    simulator = sim.Simulator(capital_base=10000, commission=commission, stop_loss_percent=stop_loss_percent,
+    backtester = b.Backtester(capital_base=10000, commission=commission, stop_loss_percent=stop_loss_percent,
                               tickers_spreads=tickers_spreads, trading_algo=trading_algo, data=data)
-    period_results, daily_results = simulator.run()
+    # period_results, daily_results = backtester.run()
 
-    # Append parameters to trading statistics and several time series
-    period_results['Params'] = params
-    period_results['Portfolio Value'] = daily_results['Portfolio Value']
+    # # Append parameters to trading statistics and several time series
+    # period_results['Params'] = params
+    # period_results['Portfolio Value'] = daily_results['Portfolio Value']
 
-    return period_results
+    # return period_results
+    return backtester.run()
 
 
 class GridSearchOptimizer(Optimizer):
@@ -75,14 +76,15 @@ class GridSearchOptimizer(Optimizer):
         #     trading_algo.set_parameters(params=params, carry_over_trades=False)
 
         #     # Simulate the trading algorithm
-        #     simulator = sim.Simulator(capital_base=10000, commission=self.commission, stop_loss_percent=self.stop_loss_percent,
+        #     backtester = b.Backtester(capital_base=10000, commission=self.commission, stop_loss_percent=self.stop_loss_percent,
         #                               tickers_spreads=self.tickers_spreads, trading_algo=trading_algo, data=data)
-        #     period_results, daily_results = simulator.run()
+        #     daily_results = backtester.run()
+        #     # period_results, daily_results = simulator.run()
 
         #     # Record scenario parameters and statistics
-        #     period_results['Params'] = params
-        #     period_results['Portfolio Value'] = daily_results['Portfolio Value']
-        #     results.append(period_results)
+        #     # daily_results['Params'] = params
+        #     # daily_results['Portfolio Value'] = daily_results['Portfolio Value']
+        #     results.append(daily_results)
 
         # Prepare input data for running parallel simulations
         simulation_args = itertools.izip(
@@ -100,14 +102,25 @@ class GridSearchOptimizer(Optimizer):
         results = pd.DataFrame(results)
 
         # Sort the results based on performance metrics and get parameters
-        results = results[results['Total Trades'] >= self.min_trades]
-        params = results.sort(
-            columns=[self.opt_metric],
-            ascending=[self.opt_metric_asc]
-        )['Params'].head(1).values[0]
+        # results = results[results['Total Trades'] >= self.min_trades]
+        # params = results.sort(
+        #     columns=[self.opt_metric],
+        #     ascending=[self.opt_metric_asc]
+        # )['Params'].head(1).values[0]
 
-        self.params = params
-        # return params
+        # TODO: Build out analytics to map here
+        # test = results.sort(
+        #     columns=[self.opt_metric],
+        #     ascending=[self.opt_metric_asc]
+        # ).head(1).values[0]
+
+        # pprint(test)
+        # exit(0)
+
+        # Save optimal parameters
+        self.params = None
+        # self.params = params
+
         return results
 
     # Generate parameter sets for each scenario

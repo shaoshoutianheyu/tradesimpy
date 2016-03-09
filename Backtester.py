@@ -1,215 +1,446 @@
-from backtester_import import *
-import json
+from simulator_import import *
+import math as m
 import numpy as np
 import pandas as pd
-import time
-from pandas.tseries.offsets import BDay
-import matplotlib.pyplot as plt
-import DataImport as di
-import Simulator as sim
-import SystemParameters as sp
-import trading_algorithms.TradingAlgorithmFactory as taf
-import optimizers.OptimizerFactory as of
-
-YEARLY_TRADE_DAYS = 252
+# from pprint import pprint
 
 
 class Backtester(object):
+    def __init__(self, capital_base, commission, tickers_spreads, stop_loss_percent, carry_over_trades=False,
+                 trading_algo=None, data=None):
+        self.trading_algo = trading_algo
+        self.data = data
+        self.capital_base = capital_base
+        self.start_dates = dict()
+        self.portfolio_global_high = capital_base
+        self.portfolio_local_low = capital_base
+        self.max_drawdown = 0.0
+        self.carry_over_trades = carry_over_trades
+        self.commission = commission
+        self.tickers_spreads = tickers_spreads
+        self.stop_loss_percent = stop_loss_percent
 
-    def __init__(self, params):
-        # Data members
-        self.params = params
-        self.in_sample_day_cnt = np.round(params.in_sample_year_cnt * YEARLY_TRADE_DAYS)
-        self.out_sample_day_cnt = np.round(params.out_sample_year_cnt * YEARLY_TRADE_DAYS)
+        self.open_share_price = dict()
+        self.stop_losses = dict()
+        self.purchased_shares = dict()
+        self.prev_portfolio_value = self.capital_base
+        self.prev_cash_amount = self.capital_base
+        self.prev_invested_amount = 0.0
 
-        # TODO: Check if ticker(s) existed during period needed for backtesting
-        # for ticker in tickers:
-        #     sec = symbol("SPY")
-            # if sec.security_start_date > startDate:
-            #     print 'ERROR: %s started trading %d and the backtest requires data up to %s' % \
-            #           (sec.security_start_date, startDate)
-            #
-            # print '%s:          %s' % (sec.symbol, sec.security_start_date)
-            # print 'Backtest:    %s' % (startDate)
+        if trading_algo is not None and data is not None:
+            # Determine trading start dates for each ticker
+            for ticker in self.trading_algo.tickers:
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window].name
 
-        # Create list of date ranges for in-sample and out-of-sample periods
-        self.sample_periods = self.create_sample_periods(self.params.start_date, self.params.end_date,
-                                                         self.in_sample_day_cnt, self.out_sample_day_cnt)
+            # TODO: Make this more flexible for multiple tickers!
+            self.dates =\
+                data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
 
-        # Display sample period date ranges
-        print('Sample periods:')
-        for per in self.sample_periods:
-            print('    In:  %s - %s (%d)' % (per['in'][0].date(), per['in'][1].date(), (per['in'][1] - per['in'][0]).days))
-            print('    Out: %s - %s (%d)' % (per['out'][0].date(), per['out'][1].date(), (per['out'][1] - per['out'][0]).days))
-            print
+    def run(self, capital_base=10000, trading_algo=None, data=None):
+        self.capital_base = capital_base
+        winning_trade_cnt = 0
+        losing_trade_cnt = 0
+        winning_trade_returns = list()
+        losing_trade_returns = list()
 
-        # TODO: Pull data required for all in-sample and out-of-sample periods
+        # Create trading algorithm if necessary
+        if trading_algo is not None:
+            self.trading_algo = trading_algo
 
-    def run(self):
-        portfolio_series = pd.DataFrame()
-        portfolio_stats = list()
-        capital_base = self.params.capital_base
+        # Load data if necessary
+        if data is not None:
+            self.data = data
 
-        # Create trading algorithm, optimizer, and simulator
-        trading_algo = taf.create_trading_algo(params=self.params)
-        optimizer = of.create_optimizer(params=self.params)
-        simulator = sim.Simulator(capital_base=capital_base, commission=self.params.commission,
-                                  stop_loss_percent=self.params.stop_loss_percent,
-                                  tickers_spreads=self.params.tickers_spreads, carry_over_trades=self.params.carry_over_trades)
+            # Determine trading start dates for each ticker
+            for ticker in self.trading_algo.tickers:
+                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window].name
 
-        # Backtest trading algorithm
-        for per in self.sample_periods:
-            in_start = per['in'][0]
-            in_end = per['in'][1]
-            out_start = per['out'][0]
-            out_end = per['out'][1]
+            # TODO: Make this more flexible for multiple tickers!
+            self.dates =\
+                data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
 
-            # Get optimal parameters based on performance metric and historical time horizon
-            print('Optimizing parameter set for dates %s to %s.' % (in_start.date(), in_end.date()))
-            start_time = time.time()
-            # algo_params = optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
-            optimizer.run(trading_algo=trading_algo, start_date=in_start, end_date=in_end)
-            end_time = time.time()
-            print('Finished in-sample optimization in %f seconds.\n' % (end_time - start_time))
-            algo_params = optimizer.params
+        # Intialize daily results structures
+        portfolio_value = dict()
+        p_n_l = dict()
+        returns = dict()
+        transactions = dict()
+        invested_amount = dict()
+        cash_amount = dict()
+        commissions = dict()
 
-            # Set trading algorithm's parameters
-            trading_algo.set_parameters(params=algo_params, carry_over_trades=self.params.carry_over_trades)
+        # Initialize simulation results helper variables
+        algo_window_length = self.trading_algo.hist_window
+        algo_data = dict()
 
-            # Pull out-of-sample data
-            data = di.load_data(tickers=self.params.tickers_spreads.keys(),
-                                start=out_start.date(),
-                                end=out_end.date(),
-                                adjusted=True,
-                                prev_data_size=trading_algo.hist_window)
+        # Reset previous values if no trades should be carried over
+        if not self.carry_over_trades:
+            self.stop_losses = dict()
+            self.purchased_shares = dict()
+            self.prev_portfolio_value = self.capital_base
+            self.prev_cash_amount = self.capital_base
+            self.prev_invested_amount = 0.0
+            self.open_share_price = dict()
 
-            # Simulate over out-of-sample data
-            print('Simulating algorithm for dates %s to %s.' % (out_start.date(), out_end.date()))
-            start_time = time.time()
-            period_results, daily_results = simulator.run(capital_base=capital_base, trading_algo=trading_algo, data=data)
-            end_time = time.time()
-            print('Finished out-of-sample simulation %f seconds.\n' % (end_time - start_time))
+        # Iterate over all trading days
+        for date in self.dates:
+            cash_amount[date] = 0.0
+            invested_amount[date] = 0.0
+            commissions[date] = 0.0
+            transactions[date] = dict()
 
-            # Keep track of the portfolio's value over time
-            capital_base = period_results['End Portfolio Value']
+            for ticker in self.trading_algo.tickers:
+                algo_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
 
-            # Record results for later analysis
-            portfolio_stats.append(period_results)
+            # Determine the trade decision for entire portfolio
+            trade_desc = self.trading_algo.determine_trade_decision(algo_data)
 
-            # Concatenate all out-of-sample simulations
-            portfolio_series = pd.concat([portfolio_series, daily_results[['Portfolio Value', 'Return']]])
+            # Trade off of all trade decisions
+            if len(trade_desc) != 0:
+                for key, value in trade_desc.iteritems():
+                    if value['position'] == 0 and key in self.purchased_shares.keys():  # Close existing position
+                        # Mark the portfolio to market
+                        current_invested_amount = 0.0
+                        for k, v in self.purchased_shares.iteritems():
+                            current_invested_amount += v*self.data[k].loc[date, 'Open']
 
-        return portfolio_stats, portfolio_series
+                        # Determine at which share price to sell
+                        # TODO: Introduce slippage here, set from config file
+                        share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
 
-    def create_sample_periods(self, start_date, end_date, in_sample_day_cnt, out_sample_day_cnt):
-        sample_periods = list()
+                        # Record commission
+                        commissions[date] += self.commission
 
-        # Determine and store all sample periods
-        while (start_date + BDay(out_sample_day_cnt - 1)) <= end_date:
-            inStart = start_date - BDay(in_sample_day_cnt)
-            inEnd = start_date - BDay(1)
-            outStart = start_date
-            outEnd = start_date + BDay(out_sample_day_cnt - 1)
+                        # Sell shares for cash
+                        cash_amount[date] =\
+                            self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
 
-            sample_periods.append(
-                {
-                    'in':   [inStart, inEnd],
-                    'out':  [outStart, outEnd]
-                }
-            )
+                        # End of day invested amount
+                        invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
 
-            # Update new start date
-            start_date = start_date + BDay(out_sample_day_cnt)
+                        # Record transaction
+                        transactions[date][key] = {
+                            'position': 0,
+                            'share_count': self.purchased_shares[key],
+                            'share_price': share_price
+                        }
 
-        # Be sure to include any remaining days in full sample period as a sample period
-        if start_date < end_date:
-            sample_periods.append(
-                {
-                    'in':   [start_date - BDay(in_sample_day_cnt), start_date - BDay(1)],
-                    'out':  [start_date, end_date]
-                }
-            )
+                        # Wining or losing trade
+                        if share_price > self.open_share_price[key]:
+                            winning_trade_cnt += 1
+                            winning_trade_returns.append((share_price / self.open_share_price[key]) - 1)
+                        else:
+                            losing_trade_cnt += 1
+                            losing_trade_returns.append((share_price / self.open_share_price[key]) - 1)
 
-        return sample_periods
+                        # Remove purchased record and potential stop losses
+                        del self.purchased_shares[key]
+                        if self.stop_loss_percent != 0:
+                            del self.stop_losses[key]
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Please provide valid parameters {[configuration file]}')
-        exit(1)
+                    elif value['position'] == 1 and key not in self.purchased_shares.keys():  # Open long position
+                        # Determine at which share price to buy
+                        # TODO: Introduce slippage here, set from config file
+                        share_price = (1 + self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
+                        self.purchased_shares[key] =\
+                            m.floor(self.prev_portfolio_value/share_price*value['portfolio_perc'])
 
-    args = sys.argv[1:]
-    configFile = args[0]
+                        # Record commission
+                        commissions[date] += self.commission
 
-    # Extract data from config (JSON) file
-    with open(configFile, mode='r') as f:
-        configData = json.loads(f.read())
+                        # Purchase shares using cash
+                        cash_amount[date] =\
+                            self.prev_cash_amount - self.purchased_shares[key]*share_price - self.commission
 
-    # Set system config parameters and display
-    params = sp.SystemParameters(configData)
-    params.display()
+                        # End of day invested amount
+                        invested_amount[date] =\
+                            self.prev_invested_amount + self.purchased_shares[key]*self.data[key].loc[date, 'Close']
 
-    # Initialize and run backtest
-    backtester = Backtester(params)
-    portfolio_stats, portfolio_series = backtester.run()
+                        # Record transaction
+                        transactions[date][key] = {
+                            'position': 1,
+                            'share_count': self.purchased_shares[key],
+                            'share_price': share_price
+                        }
+                        self.open_share_price[key] = share_price
 
-    # Pull benchmark stats
-    benchmark_stats = di.get_benchmark_comparison(benchmark_ticker=params.benchmark_ticker,
-                                                  start_date=params.start_date,
-                                                  end_date=params.end_date,
-                                                  capital_base=params.capital_base)
+                        # Set stop loss or trigger (if necessary)
+                        if self.stop_loss_percent != 0:
+                            stop_loss = share_price * (1 - self.stop_loss_percent)
 
-    # Display benchmark results
-    print('Benchmark results:')
-    print('Total Return:        %f' % ((benchmark_stats['Portfolio Value'][-1] / benchmark_stats['Portfolio Value'][0]) - 1))
-    print('Annual Volatility    %f' % (benchmark_stats['Return Std Dev']))
-    print('CAGR:                %f' % (benchmark_stats['CAGR']))
-    print('Max Drawdown:        %f' % (benchmark_stats['Max Drawdown']))
-    print('Sharpe Ratio:        %f' % (benchmark_stats['Sharpe Ratio']))
-    print('Sortino Ratio:       %f' % (benchmark_stats['Sortino Ratio']))
-    print('MAR Ratio:           %f\n' % (benchmark_stats['MAR Ratio']))
+                            # Trigger stop loss (if necessary)
+                            if stop_loss >= self.data[key].loc[date, 'Low']:  # Close recently opened position
+                                # Mark the portfolio to market
+                                current_invested_amount = 0.0
+                                for k, v in self.purchased_shares.iteritems():
+                                    if key == k:
+                                        current_invested_amount += v*stop_loss
+                                    else:
+                                        current_invested_amount += v*self.data[k].loc[date, 'Close']
 
-    # Compute backtest stats
-    # TODO: Package these computations into a library
-    years_traded = ((params.end_date - params.start_date).days + 1) / 365.0
-    backtest_avg_return = portfolio_series['Return'].mean() * 252
-    backtest_std_dev = portfolio_series['Return'].std() * np.sqrt(252)
-    backtest_semi_std_dev = portfolio_series['Return'].where(portfolio_series['Return'] < 0.0).std() * np.sqrt(252)
-    backtest_sharpe = backtest_avg_return / backtest_std_dev
-    backtest_sortino = backtest_avg_return / backtest_semi_std_dev
-    backtest_total_return = portfolio_stats[-1]['End Portfolio Value'] / portfolio_stats[0]['Start Portfolio Value']
-    backtest_cagr = backtest_total_return ** (1 / years_traded) - 1
-    backtest_avg_win_trade =\
-        [t['Average Winning Trade'] for t in portfolio_stats if not np.isnan(t['Average Winning Trade'])]
-    backtest_avg_lose_trade =\
-        [t['Average Losing Trade'] for t in portfolio_stats if not np.isnan(t['Average Losing Trade'])]
-    backtest_total_trades = np.sum([t['Total Trades'] for t in portfolio_stats])
-    backtest_win_trades = np.sum([t['Winning Trades'] for t in portfolio_stats])
-    backtest_lose_trades = np.sum([t['Losing Trades'] for t in portfolio_stats])
+                                # Record commission
+                                commissions[date] += self.commission
 
-    # Display backtesting results
-    print('Backtest results:')
-    print('Total Return:            %f' % (backtest_total_return - 1))
-    print('Annual Volatility:       %f' % (backtest_std_dev))
-    print('CAGR:                    %f' % (backtest_cagr))
-    print('Max Drawdown:            %f' % (portfolio_stats[-1]['Max Drawdown']))
-    print('Sharpe Ratio:            %f' % (backtest_sharpe))
-    print('Sortino Ratio:           %f' % (backtest_sortino))
-    print('MAR Ratio:               %f' % (backtest_cagr / portfolio_stats[-1]['Max Drawdown']))
-    print('Total Trades:            %d' % (backtest_total_trades))
-    print('Percent Winning Trades:  %.2f' % (backtest_win_trades / float(backtest_total_trades)))
-    print('Percent Losing Trades:   %.2f' % (backtest_lose_trades / float(backtest_total_trades)))
-    print('Average Winning Trades:  %f' % (np.sum(backtest_avg_win_trade) / len(backtest_avg_win_trade)))
-    print('Average Losing Trades:   %f' % (np.sum(backtest_avg_lose_trade) / len(backtest_avg_lose_trade)))
+                                # Sell shares for cash
+                                cash_amount[date] += self.purchased_shares[key]*stop_loss - self.commission
 
-    # Display a plot comparing the benchmark and portfolio values
-    port_value_series = pd.DataFrame(data=benchmark_stats['Portfolio Value'].values,
-                                     index=benchmark_stats['Portfolio Value'].index,
-                                     columns=[params.benchmark_ticker])
-    port_value_series['Algorithm'] = portfolio_series['Portfolio Value']
-    plot = port_value_series.plot(title='Trading Algorithm vs. Benchmark',
-                                  legend=False,
-                                  colormap='rainbow')
-    plot.set_xlabel('Date')
-    plot.set_ylabel('Value')
-    plot.legend(loc=2, prop={'size': 10})
-    plt.show()
+                                # End of day invested amount
+                                invested_amount[date] = current_invested_amount - self.purchased_shares[key]*stop_loss
+
+                                # Record transaction
+                                # TODO: Append to list to accomodate for multiple daily transactions
+                                transactions[date][key] = {
+                                    'position': 0,
+                                    'share_count': self.purchased_shares[key],
+                                    'share_price': stop_loss
+                                }
+
+                                # Wining or losing trade (should always be a loss)
+                                if stop_loss > self.open_share_price[key]:
+                                    winning_trade_cnt += 1
+                                    winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                else:
+                                    losing_trade_cnt += 1
+                                    losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                # Remove purchased record
+                                del self.purchased_shares[key]
+                            else:
+                                self.stop_losses[key] = stop_loss
+
+                    # TODO: Allow for short selling
+                    elif value['position'] == -1:  # Open short position
+                        pass
+                        # # Determine how many shares to purchase
+                        # # TODO: Introduce slippage here, set from config file
+                        # share_price = (1 - self.bid_ask_spread[key]/2) * self.data[key].loc[date, 'Open']
+                        # purchased_shares[key] = -m.floor(prev_portfolio_value/share_price*value['portfolio_perc'])
+                        #
+                        # # Record commission
+                        # commissions[date] += self.commission
+                        #
+                        # # Purchase shares using cash
+                        # cash_amount[date] = prev_cash_amount - purchased_shares[key]*share_price - self.commission
+                        #
+                        # # End of day invested amount
+                        # invested_amount[date] =\
+                        #     prev_invested_amount + purchased_shares[key]*self.data[key].loc[date, 'Close']
+                        #
+                        # # Record transaction
+                        # transactions[date][key] = {
+                        #     'position': -1,
+                        #     'share_count': purchased_shares[key],
+                        #     'share_price': share_price
+                        # }
+                    else:  # No trades, check for triggered stop losses and mark portfolio to market
+                        cash_amount[date] = self.prev_cash_amount
+
+                        if len(self.purchased_shares) != 0:
+                            temp_purchased_shares = self.purchased_shares.copy()
+
+                            # Determine current invested amount
+                            for key, value in temp_purchased_shares.iteritems():
+                                # Check potential triggered stop-losses for open orders
+                                if self.stop_loss_percent != 0:
+                                    stop_loss = self.stop_losses[key]
+
+                                    # TODO: Have this work for short positions too
+                                    if stop_loss >= self.data[key].loc[date, 'Low']:
+                                        # Mark the portfolio to market
+                                        current_invested_amount = 0.0
+                                        for k, v in self.purchased_shares.iteritems():
+                                            if key == k:
+                                                current_invested_amount += v*stop_loss
+                                            else:
+                                                current_invested_amount += v*self.data[k].loc[date, 'Close']
+
+                                        # Record commission
+                                        commissions[date] += self.commission
+
+                                        # Sell shares for cash
+                                        cash_amount[date] += value*stop_loss - self.commission
+
+                                        # End of day invested amount
+                                        invested_amount[date] = current_invested_amount - value*stop_loss
+
+                                        # Record transaction
+                                        # TODO: Append to list to accomodate for multiple daily transactions
+                                        transactions[date][key] = {
+                                            'position': 0,
+                                            'share_count': value,
+                                            'share_price': stop_loss
+                                        }
+
+                                        # Wining or losing trade (should always be a loss)
+                                        if stop_loss > self.open_share_price[key]:
+                                            winning_trade_cnt += 1
+                                            winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                        else:
+                                            losing_trade_cnt += 1
+                                            losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                        # Remove purchased record
+                                        del self.purchased_shares[key]
+                                    else:
+                                        invested_amount[date] += value*self.data[key].loc[date, 'Close']
+                                else:
+                                    invested_amount[date] += value*self.data[key].loc[date, 'Close']
+            else:  # No trades, check for triggered stop losses and mark portfolio to market
+                cash_amount[date] = self.prev_cash_amount
+
+                if len(self.purchased_shares) != 0:
+                    temp_purchased_shares = self.purchased_shares.copy()
+
+                    # Determine current invested amount
+                    for key, value in temp_purchased_shares.iteritems():
+                        # Check potential triggered stop-losses for open orders
+                        if self.stop_loss_percent != 0:
+                            stop_loss = self.stop_losses[key]
+
+                            # TODO: Have this work for short positions too
+                            if stop_loss >= self.data[key].loc[date, 'Low']:
+                                # Mark the portfolio to market
+                                current_invested_amount = 0.0
+                                for k, v in self.purchased_shares.iteritems():
+                                    if key == k:
+                                        current_invested_amount += v*stop_loss
+                                    else:
+                                        current_invested_amount += v*self.data[k].loc[date, 'Close']
+
+                                # Record commission
+                                commissions[date] += self.commission
+
+                                # Sell shares for cash
+                                cash_amount[date] += value*stop_loss - self.commission
+
+                                # End of day invested amount
+                                invested_amount[date] = current_invested_amount - value*stop_loss
+
+                                # Record transaction
+                                # TODO: Append to list to accomodate for multiple daily transactions
+                                transactions[date][key] = {
+                                    'position': 0,
+                                    'share_count': value,
+                                    'share_price': stop_loss
+                                }
+
+                                # Wining or losing trade (should always be a loss)
+                                if stop_loss > self.open_share_price[key]:
+                                    winning_trade_cnt += 1
+                                    winning_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+                                else:
+                                    losing_trade_cnt += 1
+                                    losing_trade_returns.append((stop_loss / self.open_share_price[key]) - 1)
+
+                                # Remove purchased record
+                                del self.purchased_shares[key]
+                            else:
+                                invested_amount[date] += value*self.data[key].loc[date, 'Close']
+                        else:
+                            invested_amount[date] += value*self.data[key].loc[date, 'Close']
+
+            # Record more trade stats
+            portfolio_value[date] = cash_amount[date] + invested_amount[date]
+            p_n_l[date] = portfolio_value[date] - self.prev_portfolio_value
+            returns[date] = (portfolio_value[date] / self.prev_portfolio_value) - 1.0
+
+            # Remember current asset amounts for next iteration
+            self.prev_cash_amount = cash_amount[date]
+            self.prev_invested_amount = invested_amount[date]
+            self.prev_portfolio_value = portfolio_value[date]
+
+            # Monitor portfolio drawdown (conservatively)
+            if len(self.purchased_shares) != 0:
+                # Price entire portfolio's day high and low
+                portfolio_high = cash_amount[date]
+                portfolio_low = cash_amount[date]
+                for key, value in self.purchased_shares.iteritems():
+                    portfolio_high += value*self.data[key].loc[date, 'High']
+                    portfolio_low += value*self.data[key].loc[date, 'Low']
+
+                if portfolio_high > self.portfolio_global_high:
+                    self.portfolio_global_high = portfolio_high
+                    self.portfolio_local_low = self.portfolio_global_high
+                elif portfolio_low < self.portfolio_local_low:
+                    self.portfolio_local_low = portfolio_low
+
+                    # Record max drawdown
+                    if ((self.portfolio_local_low / self.portfolio_global_high) - 1) < self.max_drawdown:
+                        self.max_drawdown = (self.portfolio_local_low / self.portfolio_global_high) - 1
+
+        # Determine if all open positions should be closed
+        if not self.carry_over_trades:
+            # Close all open positions that exist
+            if len(self.purchased_shares) != 0:
+                temp_purchased_shares = self.purchased_shares.copy()
+
+                for key, value in temp_purchased_shares.iteritems():
+                    # Mark the portfolio to market
+                    current_invested_amount = 0.0
+                    for k, v in self.purchased_shares.iteritems():
+                        current_invested_amount += v*self.data[k].loc[date, 'Open']
+
+                    # Determine at which share price to sell
+                    # TODO: Introduce slippage here, set from config file
+                    share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
+
+                    # Record commission
+                    commissions[date] += self.commission
+
+                    # Sell shares for cash
+                    cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
+
+                    # End of day invested amount
+                    invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
+
+                    # Record transaction
+                    transactions[date][key] = {
+                        'position': 0,
+                        'share_count': self.purchased_shares[key],
+                        'share_price': share_price
+                    }
+
+                    # Remove purchased record
+                    del self.purchased_shares[key]
+
+        # Create data frame out of daily trade stats
+        daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
+        daily_results['Cash'] = pd.Series(cash_amount.values(), index=cash_amount.keys())
+        daily_results['Invested'] = pd.Series(invested_amount.values(), index=invested_amount.keys())
+        daily_results['PnL'] = pd.Series(p_n_l.values(), index=p_n_l.keys())
+        # daily_results['Return'] = pd.Series(returns.values(), index=returns.keys())
+        daily_results['Commission'] = pd.Series(commissions.values(), index=commissions.keys())
+        daily_results['Transactions'] = pd.Series(transactions.values(), index=transactions.keys())
+        daily_results = daily_results.sort_index()
+
+        # # Compute period statistics
+        # annual_avg_return = daily_results['Return'].mean() * 252
+        # annual_std_dev = daily_results['Return'].std() * np.sqrt(252)
+        # annual_semi_std_dev = daily_results['Return'].where(daily_results['Return'] < 0.0).std() * np.sqrt(252)
+        # years_traded = (((self.dates[-1] - self.dates[0]).days + 1) / 365.0)
+        # total_return = daily_results['Portfolio Value'][-1] / daily_results['Portfolio Value'][0]
+        # cagr = total_return ** (1 / years_traded) - 1
+        # sortino_ratio = float('NaN') if annual_semi_std_dev == 0 else annual_avg_return / annual_semi_std_dev
+        # mar_ratio = float('NaN') if self.max_drawdown == 0 else -cagr / self.max_drawdown
+
+        # # Create dictionary out of period stats
+        # period_results = {
+        #     'Max Drawdown': -self.max_drawdown,
+        #     'Sharpe Ratio': annual_avg_return / annual_std_dev,
+        #     'Sortino Ratio': sortino_ratio,
+        #     'MAR Ratio': mar_ratio,
+        #     # 'Information Ratio': 0.0,
+        #     'CAGR': cagr,
+        #     'Total Return': total_return - 1,
+        #     'Annual Return': annual_avg_return,
+        #     'Annual Volatility': annual_std_dev,
+        #     'Start Portfolio Value': daily_results['Portfolio Value'][0],
+        #     'End Portfolio Value': daily_results['Portfolio Value'][-1],
+        #     'Total Trades': daily_results['Transactions'].where(daily_results['Transactions'] != {}).count() / 2,
+        #     'Winning Trades': winning_trade_cnt,
+        #     'Losing Trades': losing_trade_cnt,
+        #     'Average Winning Trade': float('NaN') if len(winning_trade_returns) == 0 else np.mean(winning_trade_returns),
+        #     'Average Losing Trade': float('NaN') if len(losing_trade_returns) == 0 else np.mean(losing_trade_returns),
+        # }
+
+        # return period_results, daily_results
+        return daily_results
