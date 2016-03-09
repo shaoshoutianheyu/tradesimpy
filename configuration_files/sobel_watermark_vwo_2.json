@@ -1,0 +1,25 @@
+{
+  "opt_method"        : "grid_search",
+  "opt_metric"        : "MAR Ratio",
+  "opt_metric_asc"    : 0,
+  "algo_name"         : "sobel_outerinnerwatermark",
+  "long_only"         : 1,
+  "capital_base"      : 10000,
+  "commission"        : 1.0,
+  "start_date"        : "2015-01-01",
+  "end_date"          : "2015-12-31",
+  "in_sample_years"   : 1,
+  "out_sample_years"  : 0.25,
+  "carry_over_trades" : 0,
+  "benchmark_ticker"  : "SPY",
+  "tickers_spreads"   : {"VWO": 0.0002},
+  "hist_window"       : 10,
+  "min_trades"        : 30,
+  "stop_loss_percent" : 0.0,
+  "opt_params"        : {
+                          "open_long"         : [-0.2, 0.2, 9],
+                          "close_long"        : [-0.2, 0.2, 9],
+                          "delay"             : [2, 2, 1],
+                          "sigma"             : [2, 2, 1]
+                        }
+}

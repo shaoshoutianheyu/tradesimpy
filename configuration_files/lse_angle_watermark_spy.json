@@ -1,0 +1,25 @@
+{
+  "opt_method"        : "grid_search",
+  "opt_metric"        : "Sharpe Ratio",
+  "opt_metric_asc"    : 0,
+  "algo_name"         : "lse_angle_outerinnerwatermark",
+  "long_only"         : 1,
+  "capital_base"      : 10000,
+  "commission"        : 1.0,
+  "start_date"        : "2008-01-01",
+  "end_date"          : "2010-12-31",
+  "in_sample_years"   : 1,
+  "out_sample_years"  : 0.25,
+  "carry_over_trades" : 1,
+  "benchmark_ticker"  : "SPY",
+  "tickers_spreads"   : {"SPY": 0.0001},
+  "hist_window"       : 30,
+  "min_trades"        : 30,
+  "stop_loss_percent" : 0.0,
+  "opt_params"        : {
+                          "open_long"         : [-20, 20, 11],
+                          "close_long"        : [-20, 20, 11],
+                          "sigma"             : [3, 3, 1],
+                          "window"            : [10, 30, 5]
+                        }
+}
