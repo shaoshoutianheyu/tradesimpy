@@ -1,24 +1,13 @@
+
 class TradingAlgorithm(object):
 
-    def __init__(self, long_only, tickers, params, is_open=None):
+    def __init__(self, tickers, history_window, params):
         # Data members
-        self.long_only = long_only
         self.tickers = tickers
-        self.num_tickers = len(tickers)
+        self.history_window = history_window
         self.params = params
 
-        if is_open is None:
-            self.is_open = {}
-
-            for ticker in self.tickers:
-                self.is_open[ticker] = False
-        else:
-            self.is_open = is_open
-
-    def set_parameters(self, params, carry_over_trades):
-        self.params = params
-
-        # Remove memory of previous trade period's positions (if necessary)
-        if not carry_over_trades:
-            for ticker in self.tickers:
-                self.is_open[ticker] = False
+        # Initialize to no current open positions
+        self.position_is_open = {}
+        for ticker in self.tickers:
+            self.position_is_open[ticker] = False

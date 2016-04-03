@@ -1,24 +1,25 @@
 from Configuration import Configuration
+import json
 
 
 class BacktestConfiguration(Configuration):
-    def __init__(self, algorithm_name, start_date, end_date, cash, time_resolution, tickers, ticker_types,
-                 ticker_series_names, data_sources, commission, algorithm_parameters):
-        super(BacktestConfiguration, self).__init__(algorithm_name, start_date, end_date, cash, time_resolution,
-                                                    tickers, ticker_types, ticker_series_names, data_sources,
-                                                    commission)
+    def __init__(self, config_uri):
+        super(BacktestConfiguration, self).__init__(config_uri)
+
+        # Read config data
+        with open(config_uri, mode='r') as f:
+            config_data = json.loads(f.read())
 
         # Define data members
-        self.algorithm_parameters = algorithm_parameters
+        self.algorithm_parameters = config_data['algorithm_parameters']
 
-        self.validate_input_parameters()
-
-    def validate_input_parameters(self):
+        # Validate input parameters
         if(not self.algorithm_parameters):
             raise ValueError("Input algorithm_parameters in BacktestConfiguration is invalid.")
 
     def __str__(self):
-        print(super(BacktestConfiguration, self))
+        super(BacktestConfiguration, self).__str__()
+
         print('Algorithm parameters:')
         for name, value in self.algorithm_parameters.iteritems():
             print('                        %s : %s' % (name, value))

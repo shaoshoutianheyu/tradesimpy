@@ -1,4 +1,4 @@
-from simulator_import import *
+from backtest_import import *
 import math as m
 import numpy as np
 import pandas as pd
@@ -6,46 +6,32 @@ import pandas as pd
 
 
 class Backtester(object):
-    def __init__(self, capital_base, commission, tickers_spreads, stop_loss_percent, carry_over_trades=False,
-                 trading_algo=None, data=None):
-        self.trading_algo = trading_algo
-        self.data = data
-        self.capital_base = capital_base
-        self.start_dates = dict()
-        self.portfolio_global_high = capital_base
-        self.portfolio_local_low = capital_base
+    
+    def __init__(self, cash, commission, ticker_spreads, stop_loss_percent):
+        self.capital_base = cash
+        self.start_dates = {}
+        self.portfolio_global_high = cash
+        self.portfolio_local_low = cash
         self.max_drawdown = 0.0
-        self.carry_over_trades = carry_over_trades
         self.commission = commission
-        self.tickers_spreads = tickers_spreads
+        self.tickers_spreads = ticker_spreads
         self.stop_loss_percent = stop_loss_percent
-
-        self.open_share_price = dict()
-        self.stop_losses = dict()
-        self.purchased_shares = dict()
+        self.open_share_price = {}
+        self.stop_losses = {}
+        self.purchased_shares = {}
         self.prev_portfolio_value = self.capital_base
         self.prev_cash_amount = self.capital_base
         self.prev_invested_amount = 0.0
 
-        if trading_algo is not None and data is not None:
-            # Determine trading start dates for each ticker
-            for ticker in self.trading_algo.tickers:
-                self.start_dates[ticker] = data[ticker].iloc[self.trading_algo.hist_window].name
-
-            # TODO: Make this more flexible for multiple tickers!
-            self.dates =\
-                data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
-
-    def run(self, capital_base=10000, trading_algo=None, data=None):
-        self.capital_base = capital_base
+    def run(self, cash, trading_algo, data):
+        self.capital_base = cash
         winning_trade_cnt = 0
         losing_trade_cnt = 0
-        winning_trade_returns = list()
-        losing_trade_returns = list()
+        winning_trade_returns = []
+        losing_trade_returns = []
 
-        # Create trading algorithm if necessary
-        if trading_algo is not None:
-            self.trading_algo = trading_algo
+        # Set trading algorithm
+        self.trading_algo = trading_algo
 
         # Load data if necessary
         if data is not None:
@@ -60,33 +46,30 @@ class Backtester(object):
                 data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
 
         # Intialize daily results structures
-        portfolio_value = dict()
-        p_n_l = dict()
-        returns = dict()
-        transactions = dict()
-        invested_amount = dict()
-        cash_amount = dict()
-        commissions = dict()
+        portfolio_value = {}
+        p_n_l = {}
+        returns = {}
+        transactions = {}
+        invested_amount = {}
+        cash_amount = {}
+        commissions = {}
 
         # Initialize simulation results helper variables
-        algo_window_length = self.trading_algo.hist_window
-        algo_data = dict()
-
-        # Reset previous values if no trades should be carried over
-        if not self.carry_over_trades:
-            self.stop_losses = dict()
-            self.purchased_shares = dict()
-            self.prev_portfolio_value = self.capital_base
-            self.prev_cash_amount = self.capital_base
-            self.prev_invested_amount = 0.0
-            self.open_share_price = dict()
+        algo_window_length = self.trading_algo.history_window
+        algo_data = {}
+        self.stop_losses = {}
+        self.purchased_shares = {}
+        self.prev_portfolio_value = self.capital_base
+        self.prev_cash_amount = self.capital_base
+        self.prev_invested_amount = 0.0
+        self.open_share_price = {}
 
         # Iterate over all trading days
         for date in self.dates:
             cash_amount[date] = 0.0
             invested_amount[date] = 0.0
             commissions[date] = 0.0
-            transactions[date] = dict()
+            transactions[date] = {}
 
             for ticker in self.trading_algo.tickers:
                 algo_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
@@ -367,50 +350,48 @@ class Backtester(object):
                     if ((self.portfolio_local_low / self.portfolio_global_high) - 1) < self.max_drawdown:
                         self.max_drawdown = (self.portfolio_local_low / self.portfolio_global_high) - 1
 
-        # Determine if all open positions should be closed
-        if not self.carry_over_trades:
-            # Close all open positions that exist
-            if len(self.purchased_shares) != 0:
-                temp_purchased_shares = self.purchased_shares.copy()
+        # Close all open positions that exist
+        if len(self.purchased_shares) != 0:
+            temp_purchased_shares = self.purchased_shares.copy()
 
-                for key, value in temp_purchased_shares.iteritems():
-                    # Mark the portfolio to market
-                    current_invested_amount = 0.0
-                    for k, v in self.purchased_shares.iteritems():
-                        current_invested_amount += v*self.data[k].loc[date, 'Open']
+            for key, value in temp_purchased_shares.iteritems():
+                # Mark the portfolio to market
+                current_invested_amount = 0.0
+                for k, v in self.purchased_shares.iteritems():
+                    current_invested_amount += v*self.data[k].loc[date, 'Open']
 
-                    # Determine at which share price to sell
-                    # TODO: Introduce slippage here, set from config file
-                    share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
+                # Determine at which share price to sell
+                # TODO: Introduce slippage here, set from config file
+                share_price = (1 - self.tickers_spreads[key]/2) * self.data[key].loc[date, 'Open']
 
-                    # Record commission
-                    commissions[date] += self.commission
+                # Record commission
+                commissions[date] += self.commission
 
-                    # Sell shares for cash
-                    cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
+                # Sell shares for cash
+                cash_amount[date] = self.prev_cash_amount + self.purchased_shares[key]*share_price - self.commission
 
-                    # End of day invested amount
-                    invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
+                # End of day invested amount
+                invested_amount[date] = current_invested_amount - self.purchased_shares[key]*share_price
 
-                    # Record transaction
-                    transactions[date][key] = {
-                        'position': 0,
-                        'share_count': self.purchased_shares[key],
-                        'share_price': share_price
-                    }
+                # Record transaction
+                transactions[date][key] = {
+                    'position': 0,
+                    'share_count': self.purchased_shares[key],
+                    'share_price': share_price
+                }
 
-                    # Remove purchased record
-                    del self.purchased_shares[key]
+                # Remove purchased record
+                del self.purchased_shares[key]
 
         # Create data frame out of daily trade stats
-        daily_results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
-        daily_results['Cash'] = pd.Series(cash_amount.values(), index=cash_amount.keys())
-        daily_results['Invested'] = pd.Series(invested_amount.values(), index=invested_amount.keys())
-        daily_results['PnL'] = pd.Series(p_n_l.values(), index=p_n_l.keys())
-        # daily_results['Return'] = pd.Series(returns.values(), index=returns.keys())
-        daily_results['Commission'] = pd.Series(commissions.values(), index=commissions.keys())
-        daily_results['Transactions'] = pd.Series(transactions.values(), index=transactions.keys())
-        daily_results = daily_results.sort_index()
+        results = pd.DataFrame(portfolio_value.values(), columns=['Portfolio Value'], index=portfolio_value.keys())
+        results['Cash'] = pd.Series(cash_amount.values(), index=cash_amount.keys())
+        results['Invested'] = pd.Series(invested_amount.values(), index=invested_amount.keys())
+        results['PnL'] = pd.Series(p_n_l.values(), index=p_n_l.keys())
+        # results['Return'] = pd.Series(returns.values(), index=returns.keys())
+        results['Commission'] = pd.Series(commissions.values(), index=commissions.keys())
+        results['Transactions'] = pd.Series(transactions.values(), index=transactions.keys())
+        results = results.sort_index()
 
         # # Compute period statistics
         # annual_avg_return = daily_results['Return'].mean() * 252
@@ -442,5 +423,4 @@ class Backtester(object):
         #     'Average Losing Trade': float('NaN') if len(losing_trade_returns) == 0 else np.mean(losing_trade_returns),
         # }
 
-        # return period_results, daily_results
-        return daily_results
+        return results
