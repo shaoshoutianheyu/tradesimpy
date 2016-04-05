@@ -60,5 +60,5 @@ class BacktestEngine(object):
         trading_algo = taf.create_trading_algo(config.algorithm_name, config.tickers, config.history_window, config.algorithm_parameters)
 
         # Setup and run the backtester
-        backtester = Backtester(config.cash, config.commission, config.ticker_spreads, 1.0)
+        backtester = Backtester(config.cash, config.commission, config.ticker_spreads)
         #self.results = backtester.run(config.cash, trading_algo, backtest_data)

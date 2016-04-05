@@ -4,13 +4,28 @@
   "end_date"              : "2015-12-31",
   "cash"                  : 10000,
   "time_resolution"       : "daily",
-  "tickers"               : ["INDEX_SPY", "VXX"],
-  "ticker_types"          : ["YAHOO", "YAHOO"],
-  "ticker_series_names"   : ["Adjusted Close", "Adjusted Close"],
-  "data_sources"          : ["Quandl", "Quandl"],
-  "ticker_spreads"       : [0.0001],
+  "tickers"               : [
+                              "INDEX_SPY",
+                              "VXX"
+                            ],
+  "ticker_types"          : [
+                              "YAHOO",
+                              "YAHOO"
+                            ],
+  "ticker_series_names"   : [
+                              "Adjusted Close",
+                              "Adjusted Close"
+                            ],
+  "data_sources"          : [
+                              "Quandl",
+                              "Quandl"
+                            ],
+  "ticker_spreads"        : [
+                              0.0001,
+                              0.0001
+                            ],
   "commission"            : 1.0,
-  "history_window"        : 10,
+  "history_window"        : 20,
   "algorithm_parameters"  : {
                               "ma_long_window"    : 20,
                               "ma_short_window"   : 5,
