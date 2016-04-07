@@ -55,7 +55,6 @@ class BacktestEngine(object):
         # Save backtest data
         backtest_data = {}
         for ticker in config.tickers:
-            pprint(data_dict)
             backtest_data[ticker] = pd.DataFrame(data_dict[ticker])
 
         # Create the trading algorithm
@@ -63,6 +62,7 @@ class BacktestEngine(object):
 
         # Setup and run the backtester
         backtester = Backtester(config.cash, config.commission, config.ticker_spreads)
-        self.results = backtester.run(config.cash, trading_algo, backtest_data)
+        backtester.run(config.cash, trading_algo, backtest_data)
 
-        pprint(self.results)
+        # Save results
+        self.results = backtester.results

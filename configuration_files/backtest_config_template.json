@@ -19,12 +19,14 @@
   "ticker_spreads"        : [
                               0.0001
                             ],
-  "commission"            : 8.0,
+  "commission"            : 0.0,
   "history_window"        : 20,
   "algorithm_parameters"  : {
                               "ma_long_window"    : 20,
                               "ma_short_window"   : 5,
                               "open_long"         : -0.25,
-                              "close_long"        : 0.4
+                              "close_long"        : 0.4,
+                              "open_short"        : 0.5,
+                              "close_short"       : -0.15
                             }
 }

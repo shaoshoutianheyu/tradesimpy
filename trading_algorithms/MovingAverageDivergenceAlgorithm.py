@@ -19,7 +19,9 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
         self.ma_long_window = params['ma_long_window']
         self.ma_short_window = params['ma_short_window']
         self.open_long = params['open_long']
-        self.open_short = params['close_long']
+        self.close_long = params['close_long']
+        self.open_short = params['open_short']
+        self.close_short = params['close_short']
 
     def trade_decision(self, data):
         trade_decision = {}
@@ -41,24 +43,21 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
             # Only trade prior to a long-over-short or short-over-long moving average cross
             if self.long_over_short_cross is True:
                 # Decide whether or not to open a long position
-                if not self.position_is_open[ticker] and ma_diff > self.params['open_long']:
-                    trade_decision[ticker] = {'position': 1, 'position_percent': 0.99 / len(self.tickers), 'share_count': None}
+                if not self.position_is_open[ticker] and ma_diff > self.open_long:
+                    trade_decision[ticker] = {'position': 1, 'share_count': None, 'position_percent': 0.99 / len(self.tickers)}
                     self.position_is_open[ticker] = True
-                elif self.position_is_open[ticker] and ma_diff < self.params['close_long']:
-                    trade_decision[ticker] = {'position': 0, 'position_percent': 0.0, 'share_count': None}
+                elif self.position_is_open[ticker] and ma_diff < self.close_long:
+                    trade_decision[ticker] = {'position': 0, 'share_count': None, 'position_percent': 0.0}
                     self.position_is_open[ticker] = False
                     self.long_over_short_cross = False
             elif self.short_over_long_cross is True:
                 pass
                 # Decide whether or not to open a short position
-                #if not self.position_is_open[ticker] and ma_diff < self.params['open_short']:
-                #    # TODO: Check for open long positions and close if they exist
-                #    self.close_open_positions()
-                    
-                #    trade_decision[ticker] = {'position': -1, 'portfolio_perc': 0.95/self.num_tickers}
+                #if not self.position_is_open[ticker] and ma_diff > self.open_short:
+                #    trade_decision[ticker] = {'position': -1, 'share_count': None, 'position_percent': 0.99 / len(self.tickers)}
                 #    self.position_is_open[ticker] = True
-                #elif self.position_is_open[ticker] and ma_diff > self.params['close_short']:
-                #    trade_decision[ticker] = {'position': 0, 'portfolio_perc': 0.0}
+                #elif self.position_is_open[ticker] and ma_diff < self.close_short:
+                #    trade_decision[ticker] = {'position': 0, 'share_count': None, 'position_percent': 0.0}
                 #    self.position_is_open[ticker] = False
                 #    self.short_over_long_cross = False
 

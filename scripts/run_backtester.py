@@ -2,6 +2,7 @@ from script_import import *
 import sys
 from BacktestConfiguration import BacktestConfiguration
 from BacktestEngine import BacktestEngine
+from pprint import pprint
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -18,8 +19,6 @@ if __name__ == '__main__':
     # Initialize and run the backtest engine
     backtest_engine = BacktestEngine()
     backtest_engine.run(config)
+    pprint(backtest_engine.results)
 
-    # TODO: Retrieve backtest results and display
-
-
-    # TODO: Save backtest results
+    # TODO: Store the results in a binary file
