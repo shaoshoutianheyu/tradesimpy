@@ -1,4 +1,5 @@
 from TradingAlgorithm import TradingAlgorithm
+from pprint import pprint
 
 
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
@@ -41,32 +42,27 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
             if self.long_over_short_cross is True:
                 # Decide whether or not to open a long position
                 if not self.position_is_open[ticker] and ma_diff > self.params['open_long']:
-                    # TODO: Check for open short positions and close if they exist
-                    self.close_open_positions()
-
-                    trade_decision[ticker] = {'position': 1, 'portfolio_perc': 0.95/self.num_tickers}
+                    trade_decision[ticker] = {'position': 1, 'position_percent': 0.99 / len(self.tickers), 'share_count': None}
                     self.position_is_open[ticker] = True
                 elif self.position_is_open[ticker] and ma_diff < self.params['close_long']:
-                    trade_decision[ticker] = {'position': 0, 'portfolio_perc': 0.0}
+                    trade_decision[ticker] = {'position': 0, 'position_percent': 0.0, 'share_count': None}
                     self.position_is_open[ticker] = False
                     self.long_over_short_cross = False
             elif self.short_over_long_cross is True:
+                pass
                 # Decide whether or not to open a short position
-                if not self.position_is_open[ticker] and ma_diff < self.params['open_short']:
-                    # TODO: Check for open long positions and close if they exist
-                    self.close_open_positions()
+                #if not self.position_is_open[ticker] and ma_diff < self.params['open_short']:
+                #    # TODO: Check for open long positions and close if they exist
+                #    self.close_open_positions()
                     
-                    trade_decision[ticker] = {'position': -1, 'portfolio_perc': 0.95/self.num_tickers}
-                    self.position_is_open[ticker] = True
-                elif self.position_is_open[ticker] and ma_diff > self.params['close_short']:
-                    trade_decision[ticker] = {'position': 0, 'portfolio_perc': 0.0}
-                    self.position_is_open[ticker] = False
-                    self.short_over_long_cross = False
+                #    trade_decision[ticker] = {'position': -1, 'portfolio_perc': 0.95/self.num_tickers}
+                #    self.position_is_open[ticker] = True
+                #elif self.position_is_open[ticker] and ma_diff > self.params['close_short']:
+                #    trade_decision[ticker] = {'position': 0, 'portfolio_perc': 0.0}
+                #    self.position_is_open[ticker] = False
+                #    self.short_over_long_cross = False
 
             self.prev_ma_long = ma_long
             self.prev_ma_short = ma_short
 
         return trade_decision
-
-    def close_open_positions(self):
-        pass

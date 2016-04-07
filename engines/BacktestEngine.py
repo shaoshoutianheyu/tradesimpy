@@ -28,37 +28,41 @@ class BacktestEngine(object):
         data_start_date = config.start_date - BDay(config.history_window + 5)
         data = Quandl.get(data_request, trim_start=data_start_date, trim_end=config.end_date, authtoken=QUANDL_API_KEY)
 
-        # TODO: Package this data loading part in some generic data loading class
-        # Select series data based on specified series names
-        column_series_names = [config.ticker_types[i] + "." + config.tickers[i] + " - " + config.ticker_series_names[i] for i in range(ticker_count)]
-        data = data[column_series_names]
+        # Prepare data dictionary
+        data_dict = {}
+        for ticker in config.tickers:
+            data_dict[ticker] = {}
 
         # TODO: Package this data loading part in some generic data loading class
         # Discover data needed for analysis process, especially for history windows
-        data_dict = {}
-        for series_name in column_series_names:
+        for column_name, series in data.iteritems():
             start_date = config.start_date
 
             # Start on valid date
-            while start_date not in data[series_name].index:
+            while start_date not in series.index:
                 start_date += BDay(1)
 
-            # Determine ticker associated with series
-            ticker = re.sub("\s-[\s\w]+$", "", series_name)
+            # Determine pure ticker and series name associated with column series
+            series_name = re.sub("^[\s\w.]+-\s+", "", column_name)
+            ticker = re.sub("\s-[\s\w]+$", "", column_name)
             ticker = re.sub("^\w+.", "", ticker)
 
             # Grab only the required data specified by the history window
-            start_period = data[series_name][:start_date].sort_index(ascending=False)
+            start_period = data[column_name][:start_date].sort_index(ascending=False)
             hist_start_date = start_period.index[config.history_window].to_datetime()
-            data_dict[ticker] = data[series_name][hist_start_date:]
+            data_dict[ticker][series_name] = data[column_name][hist_start_date:]
 
         # Save backtest data
-        backtest_data = pd.DataFrame(data_dict)
-        #pprint(backtest_data)
+        backtest_data = {}
+        for ticker in config.tickers:
+            pprint(data_dict)
+            backtest_data[ticker] = pd.DataFrame(data_dict[ticker])
 
         # Create the trading algorithm
         trading_algo = taf.create_trading_algo(config.algorithm_name, config.tickers, config.history_window, config.algorithm_parameters)
 
         # Setup and run the backtester
         backtester = Backtester(config.cash, config.commission, config.ticker_spreads)
-        #self.results = backtester.run(config.cash, trading_algo, backtest_data)
+        self.results = backtester.run(config.cash, trading_algo, backtest_data)
+
+        pprint(self.results)
