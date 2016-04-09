@@ -5,6 +5,7 @@ import sys
 lib_paths =\
     [
         os.path.abspath('../'),
+        os.path.abspath('../data/'),
         os.path.abspath('../backtester/'),
         os.path.abspath('../trading_algorithms/'),
         os.path.abspath('../configurations/')
