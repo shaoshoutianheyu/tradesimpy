@@ -23,10 +23,15 @@ class BacktestEngine(object):
         ticker_count = len(config.tickers)
         data_request = [config.ticker_types[i] + "/" + config.tickers[i] for i in range(ticker_count)]
 
+        print('Loading data...')
+
         # TODO: Package this data loading part in some Quandl specific data loading class
         # Pull series data between given date range while accommodating for the history window
         data_start_date = config.start_date - BDay(config.history_window + 5)
         data = Quandl.get(data_request, trim_start=data_start_date, trim_end=config.end_date, authtoken=QUANDL_API_KEY)
+
+        print('Data loaded!')
+        print
 
         # Prepare data dictionary
         data_dict = {}

@@ -19,6 +19,6 @@ if __name__ == '__main__':
     # Initialize and run the backtest engine
     backtest_engine = BacktestEngine()
     backtest_engine.run(config)
-    pprint(backtest_engine.results)
+    backtest_engine.results.print_results()
 
     # TODO: Store the results in a binary file

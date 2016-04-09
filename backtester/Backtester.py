@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import exceptions as ex
 from pprint import pprint
+from BacktestResults import BacktestResults
 
 
 class Backtester(object):
@@ -35,11 +36,11 @@ class Backtester(object):
 
         # Intialize daily results structures
         self.portfolio_value = {}
-        self.p_n_l = {}
-        self.transactions = {}
+        #self.p_n_l = {}
         self.invested_amount = {}
         self.cash_amount = {}
         self.commissions = {}
+        self.transactions = {}
 
         # Initialize simulation results helper variables
         algo_window_length = self.trading_algo.history_window
@@ -78,13 +79,12 @@ class Backtester(object):
 
             # Record more trade stats
             # TODO: Record OHLC of portfolio (portfolio_value is already Close), but maybe only OC makes sense
-            self.portfolio_value[date] = self.cash_amount[date] + self.invested_amount[date]
-            self.p_n_l[date] = self.portfolio_value[date] - self.prev_portfolio_value
+            #self.portfolio_value[date] = self.cash_amount[date] + self.invested_amount[date]
 
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[date]
             self.prev_invested_amount = self.invested_amount[date]
-            self.prev_portfolio_value = self.portfolio_value[date]
+            #self.prev_portfolio_value = self.portfolio_value[date]
 
             # Determine trade decisions for tomorrow's open
             self.trade_decision = self.trading_algo.trade_decision(algo_data)
@@ -97,16 +97,8 @@ class Backtester(object):
                 self._execute_transaction(date=date, ticker=ticker, is_bid=True, share_count=None, position_percent=1.0)
 
         # Create data frame out of daily trade stats
-        self.results = pd.DataFrame(self.portfolio_value.values(), columns=['Portfolio Value'], index=self.portfolio_value.keys())
-        self.results['Cash'] = pd.Series(self.cash_amount.values(), index=self.cash_amount.keys())
-        self.results['Invested'] = pd.Series(self.invested_amount.values(), index=self.invested_amount.keys())
-        self.results['PnL'] = pd.Series(self.p_n_l.values(), index=self.p_n_l.keys())
-        #self.results['Discrete Returns'] = pd.Series(returns.values(), index=returns.keys())
-        #self.results['Log Returns'] = pd.Series(returns.values(), index=returns.keys())
-        self.results['Commission'] = pd.Series(self.commissions.values(), index=self.commissions.keys())
-        self.results['Transactions'] = pd.Series(self.transactions.values(), index=self.transactions.keys())
-        self.results = self.results.sort_index()
-
+        self.results = BacktestResults(self.cash_amount, self.invested_amount, self.commissions, self.transactions)
+        
         return self.results
 
     def _execute_transaction(self, date, ticker, close_position, share_count=None, position_percent=None):
@@ -130,7 +122,7 @@ class Backtester(object):
         else:
             share_price = (1 + self.ticker_spreads[ticker_idx] / 2) * self.data[ticker].loc[date, 'Open']
             self.open_share_price[ticker] = share_price
-            self.purchased_shares[ticker] = self._determine_share_count(share_price, share_count, position_percent)
+            self.purchased_shares[ticker] = self._determine_share_count(self.cash_amount[date], share_price, share_count, position_percent)
             self.cash_amount[date] = self.prev_cash_amount - (self.purchased_shares[ticker] * share_price) - self.commission
             self.invested_amount[date] = self.prev_invested_amount + (self.purchased_shares[ticker] * self.data[ticker].loc[date, 'Close'])
             self.transactions[date][ticker] = {
@@ -152,10 +144,11 @@ class Backtester(object):
         else:
             return 0.0
 
-    def _determine_share_count(self, share_price, share_count, position_percent):
+    def _determine_share_count(self, leftover_cash, share_price, share_count, position_percent):
         if share_count is not None:
             return share_count
         elif position_percent is not None:
-            return m.floor(self.prev_portfolio_value / share_price * position_percent)
+            return m.floor(leftover_cash / share_price * position_percent)
+            #return m.floor(self.prev_portfolio_value / share_price * position_percent)
         else:
             ex.AttributeError.message('ERROR: Both share_count and position_percent were None.')
