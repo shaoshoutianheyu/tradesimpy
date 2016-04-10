@@ -10,11 +10,11 @@ class Configuration(object):
             config_data = json.loads(f.read())
 
         # Define data members
-        self.algorithm_name = config_data['algorithm_name'].lower()
+        self.algorithm_name = config_data['algorithm_name']
         self.start_date = pd.datetime.strptime(config_data['start_date'], "%Y-%m-%d")
         self.end_date = pd.datetime.strptime(config_data['end_date'], "%Y-%m-%d")
         self.cash = float(config_data['cash'])
-        self.time_resolution = config_data['time_resolution'].lower()
+        self.time_resolution = config_data['time_resolution']
         self.tickers = config_data['tickers']
         self.ticker_types = config_data['ticker_types']
         self.ticker_series_names = config_data['ticker_series_names']
@@ -48,23 +48,23 @@ class Configuration(object):
             raise ValueError("Input start_date must be less than or equal to end_date.")
 
     def __str__(self):
-        print('***************** CONFIGURATION PARAMETERS *****************')
-        print('Algorithm name:         %s' % (self.algorithm_name))
-        print('Start date:             %s' % (self.start_date))
-        print('End date:               %s' % (self.end_date))
-        print('Cash:                   %s' % (self.cash))
-        print('Time resolution:        %s' % (self.time_resolution))
+        print('************************ CONFIGURATION PARAMETERS ************************')
+        print('Algorithm name:                   %s' % (self.algorithm_name))
+        print('Start date:                       %s' % (self.start_date))
+        print('End date:                         %s' % (self.end_date))
+        print('Cash:                             %s' % (self.cash))
+        print('Time resolution:                  %s' % (self.time_resolution))
         print('Tickers:')
         for ticker in self.tickers:
-            print('                        %s' % (ticker))
+            print('                                  %s' % (ticker))
         print('Ticker types:')
         for ticker_type in self.ticker_types:
-            print('                        %s' % (ticker_type))
+            print('                                  %s' % (ticker_type))
         print('Ticker series names:')
         for ticker_series_name in self.ticker_series_names:
-            print('                        %s' % (ticker_series_name))
+            print('                                  %s' % (ticker_series_name))
         print('Data sources:')
         for data_source in self.data_sources:
-            print('                        %s' % (data_source))
-        print('Commission:             %s' % (self.commission))
-        print('History window:         %s' % (self.history_window))
+            print('                                  %s' % (data_source))
+        print('Commission:                       %s' % (self.commission))
+        print('History window:                   %s' % (self.history_window))

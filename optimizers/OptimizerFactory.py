@@ -1,19 +1,14 @@
 from GridSearchOptimizer import GridSearchOptimizer
-# from MeanCVaROptimizer import MeanCVaROptimizer
 import exceptions as ex
 
 
-def create_optimizer(params):
-    opt_name = params.opt_name
+def create_optimizer(optimizer_name, trading_algorithm, commission, ticker_spreads, optimization_metric, optimization_metric_ascending,
+    optimization_parameters):
+    optimizer_name = optimizer_name.lower()
 
-    if opt_name == 'grid_search':
-        return GridSearchOptimizer(
-            param_spaces=params.opt_params,
-            commission=params.commission,
-            stop_loss_percent=params.stop_loss_percent,
-            tickers_spreads=params.tickers_spreads,
-            min_trades=params.min_trades,
-            opt_metric=params.opt_metric,
-            opt_metric_asc=params.opt_metric_asc)
+    if optimizer_name == 'gridsearchoptimizer':
+        return GridSearchOptimizer(trading_algorithm=trading_algorithm, commission=commission, ticker_spreads=ticker_spreads,
+            optimization_metric=optimization_metric, optimization_metric_ascending=optimization_metric_ascending,
+            optimization_parameters=optimization_parameters)
     else:
-        ex.AttributeError.message('ERROR: Unknown optimizer name %s' % (opt_name))
+        ex.AttributeError.message('ERROR: Unknown optimizer name %s' % (optimizer_name))

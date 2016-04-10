@@ -2,12 +2,12 @@ from trading_algorithm_import import *
 import exceptions as ex
 import indicators.Indicators as ind
 from MovingAverageDivergenceAlgorithm import MovingAverageDivergenceAlgorithm
-#from OuterInnerWatermarkAlgorithm import OuterInnerWatermarkAlgorithm
 
 
-def create_trading_algo(algorithm_name, tickers, history_window, algorithm_parameters=None):
-
-    if algorithm_name == 'ma_div':
+def create_trading_algorithm(algorithm_name, tickers, history_window, algorithm_parameters=None):
+    algorithm_name = algorithm_name.lower()
+   
+    if algorithm_name == 'movingaveragedivergencealgorithm':
         return MovingAverageDivergenceAlgorithm(tickers=tickers, history_window=history_window, params=algorithm_parameters)
     #elif algo_name == 'sobel_outerinnerwatermark':
     #    return OuterInnerWatermarkAlgorithm(long_only=long_only, tickers=tickers, params=None,

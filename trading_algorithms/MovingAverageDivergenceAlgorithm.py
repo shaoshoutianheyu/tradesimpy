@@ -7,7 +7,8 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
     def __init__(self, tickers, history_window, params):
         super(MovingAverageDivergenceAlgorithm, self).__init__(tickers, history_window, params)
 
-        self.set_parameters(params)
+        if params is not None:
+            self.set_parameters(params)
         
         # Set support variables
         self.long_over_short_cross = False
@@ -15,13 +16,13 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
         self.prev_ma_long = 0.0
         self.prev_ma_short = 0.0
 
-    def set_parameters(self, params):
-        self.ma_long_window = params['ma_long_window']
-        self.ma_short_window = params['ma_short_window']
-        self.open_long = params['open_long']
-        self.close_long = params['close_long']
-        self.open_short = params['open_short']
-        self.close_short = params['close_short']
+    def set_parameters(self, parameters):
+        self.ma_long_window = int(parameters['ma_long_window'])
+        self.ma_short_window = int(parameters['ma_short_window'])
+        self.open_long = parameters['open_long']
+        self.close_long = parameters['close_long']
+        #self.open_short = parameters['open_short']
+        #self.close_short = parameters['close_short']
 
     def trade_decision(self, data):
         trade_decision = {}

@@ -22,6 +22,6 @@ class BacktestConfiguration(Configuration):
 
         print('Algorithm parameters:')
         for name, value in self.algorithm_parameters.iteritems():
-            print('                        %s : %s' % (name, value))
-        print('************************************************************')
+            print('                                  %s : %s' % (name, value))
+        print('***************************************************************************')
         print

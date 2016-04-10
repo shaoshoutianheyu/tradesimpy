@@ -9,97 +9,55 @@ from pandas.tseries.offsets import BDay
 from pprint import pprint
 
 
-def _simulation(sim_args):
-    # Extract simulation arguments
-    params, trading_algo, commission, stop_loss_percent, tickers_spreads, data = sim_args
+def _backtest(backtest_args):
+    # Extract backtest arguments
+    parameters, trading_algorithm, commission, ticker_spreads, data = backtest_args
 
-    # Simulate the trading algorithm with distinct parameters
-    trading_algo.set_parameters(params=params, carry_over_trades=False)
-    backtester = b.Backtester(capital_base=10000, commission=commission, stop_loss_percent=stop_loss_percent,
-                              tickers_spreads=tickers_spreads, trading_algo=trading_algo, data=data)
-    # period_results, daily_results = backtester.run()
+    # Setup the trading algorithm and backtester
+    trading_algorithm.set_parameters(parameters=parameters)
+    backtester = b.Backtester(cash=10000, commission=commission, ticker_spreads=ticker_spreads)
 
-    # # Append parameters to trading statistics and several time series
-    # period_results['Params'] = params
-    # period_results['Portfolio Value'] = daily_results['Portfolio Value']
-
-    # return period_results
-    return backtester.run()
-
+    return backtester.run(trading_algorithm=trading_algorithm, data=data)
 
 class GridSearchOptimizer(Optimizer):
-    ind_win_fudge_factor = 5
 
-    # TODO: Stop loss percent should be a parameter for the underlying algorithm
-    def __init__(self, param_spaces, commission, stop_loss_percent, tickers_spreads, min_trades, opt_metric, opt_metric_asc):
-        super(GridSearchOptimizer, self).__init__(param_spaces)
+    def __init__(self, trading_algorithm, commission, ticker_spreads, optimization_metric,
+        optimization_metric_ascending, optimization_parameters):
+        super(GridSearchOptimizer, self).__init__(trading_algorithm, optimization_metric,
+            optimization_metric_ascending, optimization_parameters)
 
         # Data members
-        self.param_sets = self.get_param_sets(self.param_spaces)
-        self.num_param_sets = len(self.param_sets)
         self.commission = commission
-        self.stop_loss_percent = stop_loss_percent
-        self.tickers_spreads = tickers_spreads
-        self.min_trades = min_trades
-        self.opt_metric = opt_metric
-        self.opt_metric_asc = opt_metric_asc
+        self.ticker_spreads = ticker_spreads
+        self.optimization_parameter_sets = self.get_param_sets(self.optimization_parameters)
+        self.num_paramameter_sets = len(self.optimization_parameter_sets)
 
-    def run(self, trading_algo, start_date, end_date):
-        results = []
+    def run(self, data):
+        # Backtest all trading scenarios and save results
+        #results = []
+        #for parameters in self.optimization_parameter_sets:
+        #    # Set the trading algorithm's parameters
+        #    self.trading_algorithm.set_parameters(parameters=parameters)
 
-        # Get the trading algorithm's required window length
-        # TODO: hist_window needs to be relocated so algos that don't require it don't need to store it
-        req_cnt = trading_algo.hist_window
+        #    # Backtest the trading algorithm
+        #    backtester = b.Backtester(cash=10000, commission=self.commission, ticker_spreads=self.ticker_spreads)
+        #    backtest_results = backtester.run(trading_algorithm=self.trading_algorithm, data=data)
 
-        # Adjust the date range to approximately accommodate for indicator window length
-        data_start_date = start_date - BDay(req_cnt + self.ind_win_fudge_factor)
+        #    results.append(backtest_results)
 
-        # Load daily adjusted close financial time series data
-        data = DataImport.load_data(tickers=trading_algo.tickers, start=data_start_date, end=end_date, adjusted=True)
-
-        # Grab only the required data
-        for ticker in trading_algo.tickers:
-            # Start on valid date
-            while start_date not in data[ticker].index:
-                start_date += BDay(1)
-
-            start_idx = data[ticker][:start_date][-req_cnt:].index.tolist()[0]
-            data[ticker] = data[ticker][start_idx:]
-
-        # # Simulate all trading scenarios and save results
-        # for params in self.param_sets:
-        #     # print "\nScenario parameters:"
-        #     # for key, value in params.iteritems():
-        #     #     print "    %s: %f" % (key, value)
-
-        #     # Set the trading algorithm's parameters
-        #     trading_algo.set_parameters(params=params, carry_over_trades=False)
-
-        #     # Simulate the trading algorithm
-        #     backtester = b.Backtester(capital_base=10000, commission=self.commission, stop_loss_percent=self.stop_loss_percent,
-        #                               tickers_spreads=self.tickers_spreads, trading_algo=trading_algo, data=data)
-        #     daily_results = backtester.run()
-        #     # period_results, daily_results = simulator.run()
-
-        #     # Record scenario parameters and statistics
-        #     # daily_results['Params'] = params
-        #     # daily_results['Portfolio Value'] = daily_results['Portfolio Value']
-        #     results.append(daily_results)
-
-        # Prepare input data for running parallel simulations
-        simulation_args = itertools.izip(
-            self.param_sets,
-            itertools.repeat(trading_algo),
+        # Prepare input data for running parallel backtests
+        backtest_args = itertools.izip(
+            self.optimization_parameter_sets,
+            itertools.repeat(self.trading_algorithm),
             itertools.repeat(self.commission),
-            itertools.repeat(self.stop_loss_percent),
-            itertools.repeat(self.tickers_spreads),
+            itertools.repeat(self.ticker_spreads),
             itertools.repeat(data)
         )
 
-        # Simulate all trading scenarios in parallel
-        pool = mp.Pool(processes=mp.cpu_count() / 2)
-        results = pool.map(func=_simulation, iterable=simulation_args)
-        results = pd.DataFrame(results)
+        # Run all backtest scenarios in parallel
+        pool = mp.Pool(processes=mp.cpu_count())
+        results = pool.map(func=_backtest, iterable=backtest_args)
+        #results = pd.DataFrame(pool_results)
 
         # Sort the results based on performance metrics and get parameters
         # results = results[results['Total Trades'] >= self.min_trades]
@@ -124,15 +82,14 @@ class GridSearchOptimizer(Optimizer):
         return results
 
     # Generate parameter sets for each scenario
-    # TODO: Build parameter sets based on the long_only and opt_params settings from config file
     @staticmethod
-    def get_param_sets(param_spaces):
+    def get_param_sets(parameter_spaces):
         discrete_param_spaces = []
         param_names = []
         param_sets = []
 
         # Discretize each parameter space
-        for key, value in param_spaces.iteritems():
+        for key, value in parameter_spaces.iteritems():
             # Skip unused parameters
             if len(value) == 0:
                 continue

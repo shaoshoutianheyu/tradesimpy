@@ -1,7 +1,7 @@
 from script_import import *
 import sys
-from BacktestConfiguration import BacktestConfiguration
-from BacktestEngine import BacktestEngine
+from OptimizationConfiguration import OptimizationConfiguration
+from OptimizationEngine import OptimizationEngine
 from pprint import pprint
 
 if __name__ == '__main__':
@@ -13,12 +13,12 @@ if __name__ == '__main__':
     config_uri = args[0]
 
     # Create backtest configuration and display
-    config = BacktestConfiguration(config_uri)
+    config = OptimizationConfiguration(config_uri)
     config.__str__()
 
     # Initialize and run the backtest engine
-    backtest_engine = BacktestEngine()
-    backtest_engine.run(config)
+    optimization_engine = OptimizationEngine()
+    optimization_engine.run(config)
     #backtest_engine.results.print_results()
 
     # TODO: Store the results in a binary file

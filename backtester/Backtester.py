@@ -12,43 +12,43 @@ class Backtester(object):
     def __init__(self, cash, commission, ticker_spreads):
         self.cash = cash
         self.start_dates = {}
-        self.portfolio_global_high = cash
-        self.portfolio_local_low = cash
         self.commission = commission
         self.ticker_spreads = ticker_spreads
         self.open_share_price = {}
         self.purchased_shares = {}
-        self.prev_portfolio_value = self.cash
         self.prev_cash_amount = self.cash
         self.prev_invested_amount = 0.0
 
-    def run(self, cash, trading_algo, data):
+    def run(self, trading_algorithm, data, cash=None):
+        self.trading_algorithm = trading_algorithm
         self.data = data
-        self.cash = cash
-        self.trading_algo = trading_algo
+
+        # Handle missing cash value
+        if cash is not None:
+            self.cash = cash
+        if self.cash is None:
+            self.cash = 10000
 
         # Determine trading start dates for each ticker
-        for ticker in self.trading_algo.tickers:
-            self.start_dates[ticker] = self.data[ticker].index[self.trading_algo.history_window]
+        for ticker in self.trading_algorithm.tickers:
+            self.start_dates[ticker] = self.data[ticker].index[self.trading_algorithm.history_window]
 
         # TODO: Make this more flexible for multiple tickers!
-        self.dates = self.data[self.trading_algo.tickers[0]][self.start_dates[self.trading_algo.tickers[0]]:].index.tolist()
+        self.dates = self.data[self.trading_algorithm.tickers[0]][self.start_dates[self.trading_algorithm.tickers[0]]:].index.tolist()
 
         # Intialize daily results structures
         self.portfolio_value = {}
-        #self.p_n_l = {}
         self.invested_amount = {}
         self.cash_amount = {}
         self.commissions = {}
         self.transactions = {}
 
         # Initialize simulation results helper variables
-        algo_window_length = self.trading_algo.history_window
+        algo_window_length = self.trading_algorithm.history_window
         algo_data = {}
         self.trade_decision = {}
         self.purchased_shares = {}
         self.open_share_price = {}
-        self.prev_portfolio_value = self.cash
         self.prev_cash_amount = self.cash
         self.prev_invested_amount = 0.0
 
@@ -74,20 +74,15 @@ class Backtester(object):
                     #    position_percent=-decision['position_percent'])
 
             # Retrieve data needed for algorithm
-            for ticker in self.trading_algo.tickers:
+            for ticker in self.trading_algorithm.tickers:
                 algo_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
-
-            # Record more trade stats
-            # TODO: Record OHLC of portfolio (portfolio_value is already Close), but maybe only OC makes sense
-            #self.portfolio_value[date] = self.cash_amount[date] + self.invested_amount[date]
 
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[date]
             self.prev_invested_amount = self.invested_amount[date]
-            #self.prev_portfolio_value = self.portfolio_value[date]
 
             # Determine trade decisions for tomorrow's open
-            self.trade_decision = self.trading_algo.trade_decision(algo_data)
+            self.trade_decision = self.trading_algorithm.trade_decision(algo_data)
 
         # Close all open positions after finishing the backtest
         if len(self.purchased_shares) != 0:
@@ -98,11 +93,11 @@ class Backtester(object):
 
         # Create data frame out of daily trade stats
         self.results = BacktestResults(self.cash_amount, self.invested_amount, self.commissions, self.transactions)
-        
+
         return self.results
 
     def _execute_transaction(self, date, ticker, close_position, share_count=None, position_percent=None):
-        ticker_idx = self.trading_algo.tickers.index(ticker)
+        ticker_idx = self.trading_algorithm.tickers.index(ticker)
         current_invested_amount = self._mark_portfolio_to_market(date)
         self.commissions[date] += self.commission
 
@@ -148,7 +143,6 @@ class Backtester(object):
         if share_count is not None:
             return share_count
         elif position_percent is not None:
-            return m.floor(leftover_cash / share_price * position_percent)
-            #return m.floor(self.prev_portfolio_value / share_price * position_percent)
+            return m.floor((leftover_cash / share_price) * position_percent)
         else:
             ex.AttributeError.message('ERROR: Both share_count and position_percent were None.')

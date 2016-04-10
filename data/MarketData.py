@@ -39,7 +39,7 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
         hist_start_date = start_period.index[history_window].to_datetime()
         data_dict[ticker][series_name] = raw_data[column_name][hist_start_date:]
 
-    # Save data
+    # Save data as dictionary of data frames
     data = {}
     for ticker in tickers:
         data[ticker] = pd.DataFrame(data_dict[ticker])
