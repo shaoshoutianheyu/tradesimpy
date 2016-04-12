@@ -6,6 +6,7 @@ lib_paths =\
     [
         os.path.abspath('../'),
         os.path.abspath('../trading_algorithms/')
+        os.path.abspath('./analytics/'),
     ]
 
 for lib_path in lib_paths:

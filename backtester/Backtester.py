@@ -9,7 +9,8 @@ from BacktestResults import BacktestResults
 
 class Backtester(object):
 
-    def __init__(self, cash, commission, ticker_spreads):
+    def __init__(self, backtest_id, cash, commission, ticker_spreads):
+        self.backtest_id = backtest_id
         self.cash = cash
         self.start_dates = {}
         self.commission = commission
@@ -89,10 +90,10 @@ class Backtester(object):
             temp_purchased_shares = self.purchased_shares.copy()
 
             for ticker, share_count in temp_purchased_shares.iteritems():
-                self._execute_transaction(date=date, ticker=ticker, is_bid=True, share_count=None, position_percent=1.0)
+                self._execute_transaction(date=date, ticker=ticker, close_position=True, share_count=None, position_percent=1.0)
 
-        # Create data frame out of daily trade stats
-        self.results = BacktestResults(self.cash_amount, self.invested_amount, self.commissions, self.transactions)
+        # Save results locally
+        self.results = BacktestResults(self.backtest_id, self.cash_amount, self.invested_amount, self.commissions, self.transactions)
 
         return self.results
 

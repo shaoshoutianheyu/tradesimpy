@@ -21,10 +21,12 @@ class OptimizationEngine(object):
         trading_algorithm = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window)
 
         # Setup and run the optimizer
-        optimizer = of.create_optimizer(config.optimizer_name, trading_algorithm, config.commission,
+        optimizer = of.create_optimizer(config.num_processors, config.optimizer_name, trading_algorithm, config.commission,
             config.ticker_spreads, config.optimization_metric, config.optimization_metric_ascending,
             config.optimization_parameters)
+        print('Running the optimizer...')
         optimizer.run(data)
-        
-        # Save results
-        #self.results = backtester.results
+        print('Ran optimizer!')
+        print
+
+        return optimizer.results

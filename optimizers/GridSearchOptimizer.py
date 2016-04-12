@@ -1,29 +1,29 @@
 from Optimizer import Optimizer
+from analytics import optimizer_analytics
 import Backtester as b
-import DataImport
+from OptimizationResults import OptimizationResults
 import itertools
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from pandas.tseries.offsets import BDay
 from pprint import pprint
 
 
 def _backtest(backtest_args):
     # Extract backtest arguments
-    parameters, trading_algorithm, commission, ticker_spreads, data = backtest_args
+    backtest_id, parameters, trading_algorithm, commission, ticker_spreads, data = backtest_args
 
     # Setup the trading algorithm and backtester
     trading_algorithm.set_parameters(parameters=parameters)
-    backtester = b.Backtester(cash=10000, commission=commission, ticker_spreads=ticker_spreads)
+    backtester = b.Backtester(backtest_id=backtest_id, cash=10000, commission=commission, ticker_spreads=ticker_spreads)
 
     return backtester.run(trading_algorithm=trading_algorithm, data=data)
 
 class GridSearchOptimizer(Optimizer):
 
-    def __init__(self, trading_algorithm, commission, ticker_spreads, optimization_metric,
+    def __init__(self, num_processors, trading_algorithm, commission, ticker_spreads, optimization_metric,
         optimization_metric_ascending, optimization_parameters):
-        super(GridSearchOptimizer, self).__init__(trading_algorithm, optimization_metric,
+        super(GridSearchOptimizer, self).__init__(num_processors, trading_algorithm, optimization_metric,
             optimization_metric_ascending, optimization_parameters)
 
         # Data members
@@ -33,20 +33,9 @@ class GridSearchOptimizer(Optimizer):
         self.num_paramameter_sets = len(self.optimization_parameter_sets)
 
     def run(self, data):
-        # Backtest all trading scenarios and save results
-        #results = []
-        #for parameters in self.optimization_parameter_sets:
-        #    # Set the trading algorithm's parameters
-        #    self.trading_algorithm.set_parameters(parameters=parameters)
-
-        #    # Backtest the trading algorithm
-        #    backtester = b.Backtester(cash=10000, commission=self.commission, ticker_spreads=self.ticker_spreads)
-        #    backtest_results = backtester.run(trading_algorithm=self.trading_algorithm, data=data)
-
-        #    results.append(backtest_results)
-
         # Prepare input data for running parallel backtests
         backtest_args = itertools.izip(
+            range(len(self.optimization_parameter_sets)),
             self.optimization_parameter_sets,
             itertools.repeat(self.trading_algorithm),
             itertools.repeat(self.commission),
@@ -55,31 +44,17 @@ class GridSearchOptimizer(Optimizer):
         )
 
         # Run all backtest scenarios in parallel
-        pool = mp.Pool(processes=mp.cpu_count())
-        results = pool.map(func=_backtest, iterable=backtest_args)
-        #results = pd.DataFrame(pool_results)
+        pool = mp.Pool(processes=self.num_processors)
+        backtest_results = pool.map(func=_backtest, iterable=backtest_args)
 
-        # Sort the results based on performance metrics and get parameters
-        # results = results[results['Total Trades'] >= self.min_trades]
-        # params = results.sort(
-        #     columns=[self.opt_metric],
-        #     ascending=[self.opt_metric_asc]
-        # )['Params'].head(1).values[0]
+        # Find optimal parameters
+        optimal_parameters = Optimizer.get_optimal_parameters(backtest_results, self.optimization_metric, \
+            self.optimization_parameter_sets, self.optimization_metric_ascending, 'daily')
 
-        # TODO: Build out analytics to map here
-        # test = results.sort(
-        #     columns=[self.opt_metric],
-        #     ascending=[self.opt_metric_asc]
-        # ).head(1).values[0]
+        # Save results
+        self.results = OptimizationResults(backtest_results, optimal_parameters)
 
-        # pprint(test)
-        # exit(0)
-
-        # Save optimal parameters
-        self.params = None
-        # self.params = params
-
-        return results
+        return self.results
 
     # Generate parameter sets for each scenario
     @staticmethod

@@ -21,12 +21,13 @@
                                       ],
   "commission"                      : 0.0,
   "history_window"                  : 20,
+  "num_processors"                  : 8,
   "optimizer_name"                  : "GridSearchOptimizer",
-  "optimization_metric"             : "MARRatio",
+  "optimization_metric"             : "sharpe_ratio",
   "optimization_metric_ascending"   : "true",
   "optimization_parameters"            : {
                                             "ma_long_window"    : [10, 20, 2],
-                                            "ma_short_window"   : [5, 5, 1],
+                                            "ma_short_window"   : [2, 5, 2],
                                             "open_long"         : [-0.25, -0.25, 1],
                                             "close_long"        : [0.4, 0.4, 1]
                                       }

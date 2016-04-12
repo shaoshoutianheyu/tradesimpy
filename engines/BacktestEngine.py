@@ -21,8 +21,10 @@ class BacktestEngine(object):
             config.algorithm_parameters)
 
         # Setup and run the backtester
-        backtester = Backtester(config.cash, config.commission, config.ticker_spreads)
+        backtester = Backtester(0, config.cash, config.commission, config.ticker_spreads)
+        print('Running the backtester...')
         backtester.run(trading_algo, data)
+        print('Ran backtester!')
+        print
 
-        # Save results
-        self.results = backtester.results
+        return backtester.results
