@@ -2,8 +2,8 @@ from optimization_engine_import import *
 from OptimizationConfiguration import OptimizationConfiguration
 from Optimizer import Optimizer
 import trading_algorithms.TradingAlgorithmFactory as taf
-import optimizers.OptimizerFactory as of
-import data.MarketData as market_data
+import optimizers.optimizer_factory as of
+import data.market_data as market_data
 from pprint import pprint
 
 

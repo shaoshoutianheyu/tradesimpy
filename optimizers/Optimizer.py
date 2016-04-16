@@ -8,7 +8,7 @@ class Optimizer(object):
 
     def __init__(self, num_processors, trading_algorithm, optimization_metric, optimization_metric_ascending,
         optimization_parameters):
-        
+
         if(num_processors > mp.cpu_count()):
             self.num_processors = mp.cpu_count()
         else:

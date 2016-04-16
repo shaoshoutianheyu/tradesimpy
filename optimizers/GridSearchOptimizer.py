@@ -4,7 +4,6 @@ import Backtester as b
 from OptimizationResults import OptimizationResults
 import itertools
 import numpy as np
-import pandas as pd
 import multiprocessing as mp
 from pprint import pprint
 

@@ -1,4 +1,4 @@
-from script_import import *
+from runner_script_import import *
 import sys
 from OptimizationConfiguration import OptimizationConfiguration
 from OptimizationEngine import OptimizationEngine

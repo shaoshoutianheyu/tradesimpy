@@ -2,8 +2,7 @@ from backtest_engine_import import *
 from BacktestConfiguration import BacktestConfiguration
 from Backtester import Backtester
 import trading_algorithms.TradingAlgorithmFactory as taf
-import data.MarketData as market_data
-from pprint import pprint
+import data.market_data as market_data
 
 
 class BacktestEngine(object):
