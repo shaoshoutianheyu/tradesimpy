@@ -9,3 +9,5 @@ lib_paths =\
 
 for lib_path in lib_paths:
     sys.path.append(lib_path)
+
+sys.path = list(set(sys.path))
