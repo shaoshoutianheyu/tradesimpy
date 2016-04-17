@@ -30,5 +30,8 @@
                                             "ma_short_window"   : [2, 5, 2],
                                             "open_long"         : [-0.25, -0.25, 1],
                                             "close_long"        : [0.4, 0.4, 1]
-                                          }
+                                          },
+    "in_sample_periods"                 : 24,
+    "out_of_sample_periods"             : 6,
+    "sample_period"                     : "monthly"
 }
