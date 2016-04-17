@@ -14,9 +14,10 @@ def _backtest(backtest_args):
 
     # Setup the trading algorithm and backtester
     trading_algorithm.set_parameters(parameters=parameters)
-    backtester = b.Backtester(backtest_id=backtest_id, cash=10000, commission=commission, ticker_spreads=ticker_spreads)
+    backtester = b.Backtester(backtest_id=backtest_id, trading_algorithm=trading_algorithm, cash=10000, \
+        commission=commission, ticker_spreads=ticker_spreads)
 
-    return backtester.run(trading_algorithm=trading_algorithm, data=data)
+    return backtester.run(data=data)
 
 class GridSearchOptimizer(Optimizer):
 

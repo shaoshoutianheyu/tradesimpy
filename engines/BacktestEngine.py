@@ -16,13 +16,13 @@ class BacktestEngine(object):
             config.start_date, config.end_date, config.history_window)
 
         # Create the trading algorithm
-        trading_algo = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window, \
+        trading_algorithm = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window, \
             config.algorithm_parameters)
 
         # Setup and run the backtester
-        backtester = Backtester(0, config.cash, config.commission, config.ticker_spreads)
+        backtester = Backtester(0, trading_algorithm, config.cash, config.commission, config.ticker_spreads)
         print('Running the backtester...')
-        backtester.run(trading_algo, data)
+        backtester.run(data)
         print('Ran backtester!')
         print
 

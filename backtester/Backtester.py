@@ -9,8 +9,9 @@ from BacktestResults import BacktestResults
 
 class Backtester(object):
 
-    def __init__(self, backtest_id, cash, commission, ticker_spreads):
+    def __init__(self, backtest_id, trading_algorithm, cash, commission, ticker_spreads):
         self.backtest_id = backtest_id
+        self.trading_algorithm = trading_algorithm
         self.cash = cash
         self.start_dates = {}
         self.commission = commission
@@ -20,8 +21,7 @@ class Backtester(object):
         self.prev_cash_amount = self.cash
         self.prev_invested_amount = 0.0
 
-    def run(self, trading_algorithm, data, cash=None):
-        self.trading_algorithm = trading_algorithm
+    def run(self, data, cash=None):
         self.data = data
 
         # Handle missing cash value

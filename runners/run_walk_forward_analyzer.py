@@ -17,8 +17,8 @@ if __name__ == '__main__':
     config.__str__()
 
     # Initialize and run the walk forward analysis engine
-    #walk_forward_analysis_engine = WalkForwardAnalysisEngine()
-    #results = walk_forward_analysis_engine.run(config)
+    walk_forward_analysis_engine = WalkForwardAnalysisEngine()
+    results = walk_forward_analysis_engine.run(config)
 
     # Display results
     #results.print_results()
