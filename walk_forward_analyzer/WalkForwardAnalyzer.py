@@ -1,5 +1,6 @@
 import numpy as np
 import exceptions as ex
+import pandas as pd
 from pandas.tseries.offsets import BDay
 from pprint import pprint
 
@@ -13,44 +14,63 @@ class WalkForwardAnalyzer(object):
         self.optimizer = optimizer
         self.backtester = backtester
 
-    def run(self, start_date, end_date, data):
-        sample_periods = self.create_sample_periods(start_date, end_date, data, self.in_sample_periods, \
+    def run(self, data, start_date, end_date):
+        sample_periods = self.create_sample_periods(data, start_date, end_date, self.in_sample_periods, \
             self.out_of_sample_periods, self.sample_period)
         pprint(sample_periods)
         exit(0)
 
-    def create_sample_periods(self, start_date, end_date, data, in_sample_periods, out_of_sample_periods, sample_period):
+    def create_sample_periods(self, data, start_date, end_date, in_sample_periods, out_of_sample_periods, sample_period):
+        downsampled_dates = self._downsample_dates(data, start_date, end_date, in_sample_periods, sample_period)
+
+        # Determine full in-sample and out-of-sample periods
+        i = 0
         sample_periods = []
-
-        downsampled_dates = self.downsample_dates(start_date, end_date, data, sample_period)
-        pprint(downsampled_dates)
-        exit(0)
-
-        # Determine and store all sample periods
-        while(start_date + BDay(out_sample_day_cnt - 1)) <= end_date:
-            inStart = start_date - BDay(in_sample_day_cnt)
-            inEnd = start_date - BDay(1)
-            outStart = start_date
-            outEnd = start_date + BDay(out_sample_day_cnt - 1)
+        while(True):
+            # Setup in-sample and out-of-sample start and end dates
+            sample_offset = i * out_of_sample_periods
+            in_sample_start_date = downsampled_dates[sample_offset]
+            in_sample_end_date = downsampled_dates[sample_offset + in_sample_periods - 1]
+            out_of_sample_start_date = downsampled_dates[sample_offset + in_sample_periods]
+            out_of_sample_end_date = downsampled_dates[sample_offset + in_sample_periods + out_of_sample_periods - 1]
 
             sample_periods.append(
                 {
-                    'in':   [inStart, inEnd],
-                    'out':  [outStart, outEnd]
+                    'in':   [in_sample_start_date, in_sample_end_date],
+                    'out':  [out_of_sample_start_date, out_of_sample_end_date]
                 }
             )
 
-            # Update new start date
-            start_date = start_date + BDay(out_sample_day_cnt)
+            # Exit the while loop before exceeding number of downsampled dates
+            i = i + 1
+            if(((i * out_of_sample_periods) + in_sample_periods + out_of_sample_periods - 1) >= len(downsampled_dates)):
+                break
 
-    def downsample_dates(self, start_date, end_date, data, sample_period):
+        # Make sure to add a sample period if there are overhanging end dates not accounted for
+        if(out_of_sample_end_date <= end_date.date()):
+            sample_offset = (i - 1) * out_of_sample_periods
+            in_sample_start_date = downsampled_dates[sample_offset + out_of_sample_periods]
+            in_sample_end_date = downsampled_dates[sample_offset + in_sample_periods + out_of_sample_periods - 1]
+            out_of_sample_start_date = downsampled_dates[sample_offset + in_sample_periods + out_of_sample_periods]
+            out_of_sample_end_date = downsampled_dates[-1]
+
+            sample_periods.append(
+                {
+                    'in':   [in_sample_start_date, in_sample_end_date],
+                    'out':  [out_of_sample_start_date, out_of_sample_end_date]
+                }
+            )
+
+        return sample_periods
+
+    def _downsample_dates(self, data, start_date, end_date, in_sample_periods, sample_period):
         downsampled_dates_per_frame = {}
         downsample_rule = self.sample_period_to_downsample_rule(sample_period)
 
         # Downsample all data sets and extract the dates
         downsampled_date_count = 0
         for name, frame in data.iteritems():
-            downsampled_data = frame.resample(downsample_rule, label='right', convention='end')[start_date:end_date]
+            downsampled_data = frame.resample(downsample_rule, label='right', convention='end')[:end_date]
             downsampled_dates_per_frame[name] = downsampled_data.axes[0].date
 
             # Make sure observation counts between different frames match
@@ -69,7 +89,13 @@ class WalkForwardAnalyzer(object):
 
             downsampled_dates.append(np.max(all_dates))
 
-        return downsampled_dates
+        # Find the downsampled date which corresponds to the original start date
+        start_date = pd.datetime.date(start_date)
+        for i in range(downsampled_date_count):
+            if(downsampled_dates[i] >= start_date):
+                break
+
+        return downsampled_dates[i-in_sample_periods:]
 
     def sample_period_to_downsample_rule(self, sample_period):
         sample_period = sample_period.lower()

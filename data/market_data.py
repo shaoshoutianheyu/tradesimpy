@@ -47,7 +47,7 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
     return data
 
 def _request(tickers, ticker_types, data_sources, start_date, end_date, history_window):    
-    data_start_date = start_date - BDay(history_window + 5)
+    data_start_date = start_date - BDay(history_window + 21)
 
     # Determine if we need to request data from multiple data sources
     data_source_lookup = {}
