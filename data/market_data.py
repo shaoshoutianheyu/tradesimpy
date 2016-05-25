@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-import Quandl
+import quandl
 from pandas.tseries.offsets import BDay
 from pprint import pprint
 import exceptions as ex
@@ -62,8 +62,9 @@ def _request(tickers, ticker_types, data_sources, start_date, end_date, history_
     frames = []
     for data_source, ticker_info in data_source_lookup.iteritems():
         if(data_source == 'Quandl'):
+            quandl.ApiConfig.api_key = QUANDL_API_KEY
             data_request = [ticker_types[i] + "/" + tickers[i] for i in range(len(tickers))]
-            frames.append(Quandl.get(data_request, trim_start=data_start_date, trim_end=end_date, authtoken=QUANDL_API_KEY))
+            frames.append(quandl.get(data_request, trim_start=data_start_date, trim_end=end_date))
         elif(data_source == 'CSV'):
             pass
         else:
@@ -73,7 +74,7 @@ def _request(tickers, ticker_types, data_sources, start_date, end_date, history_
 
 def _column_name_to_ticker_series_name(column_name, data_source):
     if(data_source == 'Quandl' or data_source == 'CSV'):
-        series_name = re.sub("^[\s\w.]+-\s+", "", column_name)
+        series_name = re.sub("^[\s\w/]+-\s+", "", column_name)
         ticker = re.sub("\s-[\s\w]+$", "", column_name)
         ticker = re.sub("^\w+.", "", ticker)
     else:
