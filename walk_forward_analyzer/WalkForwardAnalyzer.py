@@ -70,7 +70,7 @@ class WalkForwardAnalyzer(object):
         # Downsample all data sets and extract the dates
         downsampled_date_count = 0
         for name, frame in data.iteritems():
-            downsampled_data = frame.resample(downsample_rule, label='right', convention='end')[:end_date]
+            downsampled_data = frame.resample(downsample_rule, label='right', convention='end').ffill()[:end_date]
             downsampled_dates_per_frame[name] = downsampled_data.axes[0].date
 
             # Make sure observation counts between different frames match
