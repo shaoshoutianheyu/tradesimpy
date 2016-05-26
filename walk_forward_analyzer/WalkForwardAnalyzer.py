@@ -4,6 +4,7 @@ import pandas as pd
 from pandas.tseries.offsets import BDay
 from pprint import pprint
 from datetime import date, timedelta
+import Optimizer
 
 
 class WalkForwardAnalyzer(object):
@@ -15,7 +16,7 @@ class WalkForwardAnalyzer(object):
         self.optimizer = optimizer
         self.backtester = backtester
 
-    def run(self, data, start_date, end_date):
+    def run(self, data, start_date, end_date, cash):
         sample_periods = self.create_sample_periods(data, start_date, end_date, self.in_sample_periods, \
             self.out_of_sample_periods, self.sample_period)
         # pprint(sample_periods)
@@ -40,18 +41,21 @@ class WalkForwardAnalyzer(object):
             # pprint(backtester_data)
             # exit(0)
 
-            # TODO: Run the optimizer
-            # self.optimizer.run(optimizer_data)
+            # Run the optimizer
+            self.optimizer.run(optimizer_data)
+            # pprint(self.optimizer.results.optimal_parameters)
+            # exit(0)
 
+            # Run the backtester using the optimal trading algorithm parameters
+            self.backtester.trading_algorithm.set_parameters(self.optimizer.results.optimal_parameters)
+            self.backtester.run(backtester_data, cash)
 
-            # TODO: Run the backtester
+            # Update cash holdings
+            cash = self.backtester.results.cash[-1]
+            exit(0)
 
+            # TODO: Store results
 
-            # TODO: Keep track of results
-
-
-            # Initialize in-sample start date for the next sample period
-            # in_start_date = 
 
     def create_sample_periods(self, data, start_date, end_date, in_sample_periods, out_of_sample_periods, sample_period):
         downsampled_dates = self._downsample_dates(data, start_date, end_date, in_sample_periods, sample_period)

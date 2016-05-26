@@ -38,7 +38,7 @@ class WalkForwardAnalysisEngine(object):
             optimizer, backtester)
 
         print('Running the walk forward analyzer...')
-        walk_forward_analyzer.run(data, config.start_date, config.end_date)
+        walk_forward_analyzer.run(data, config.start_date, config.end_date, config.cash)
         print('Ran the walk forward analyzer!')
         print
 

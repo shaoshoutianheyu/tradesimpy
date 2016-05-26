@@ -18,7 +18,7 @@ def annualization_factor(frequency):
         return 12
     elif(frequency == 'quarterly'):
         return 4
-    elif(frequency == 'annual'):
+    elif(frequency == 'yearly'):
         return 1
     else:
         return 0
