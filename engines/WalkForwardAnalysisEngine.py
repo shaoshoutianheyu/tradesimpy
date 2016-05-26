@@ -39,8 +39,10 @@ class WalkForwardAnalysisEngine(object):
 
         print('Running the walk forward analyzer...')
         walk_forward_analyzer.run(data, config.start_date, config.end_date)
-        print('Ran walk forward analyzer!')
+        print('Ran the walk forward analyzer!')
         print
+
+        exit(0)
 
         return walk_forward_analyzer.results
 
