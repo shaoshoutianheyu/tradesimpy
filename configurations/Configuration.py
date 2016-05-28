@@ -18,7 +18,6 @@ class Configuration(object):
         self.algorithm_name = config_data['algorithm_name']
         self.start_date = pd.datetime.strptime(config_data['start_date'], "%Y-%m-%d")
         self.end_date = pd.datetime.strptime(config_data['end_date'], "%Y-%m-%d")
-        self.cash = float(config_data['cash'])
         self.time_resolution = config_data['time_resolution']
         self.tickers = config_data['tickers']
         self.ticker_types = config_data['ticker_types']
@@ -29,16 +28,12 @@ class Configuration(object):
         self.history_window = int(config_data['history_window'])
 
         # Validate input parameters
-        # if(not self.results_uri):
-        #     raise ValueError("Input results_uri in Configuration is invalid.")
         if(not self.algorithm_name):
             raise ValueError("Input algorithm_name in Configuration is invalid.")
         if(not self.start_date):
             raise ValueError("Input start_date in Configuration is invalid.")
         if(not self.end_date):
             raise ValueError("Input end_date in Configuration is invalid.")
-        if(not self.cash):
-            raise ValueError("Input cash in Configuration is invalid.")
         if(not self.time_resolution):
             raise ValueError("Input time_resolution in Configuration is invalid.")
         if(not self.tickers):
@@ -60,7 +55,6 @@ class Configuration(object):
         print('Algorithm name:                   %s' % (self.algorithm_name))
         print('Start date:                       %s' % (self.start_date))
         print('End date:                         %s' % (self.end_date))
-        print('Cash:                             %s' % (self.cash))
         print('Time resolution:                  %s' % (self.time_resolution))
         print('Tickers:')
         for ticker in self.tickers:

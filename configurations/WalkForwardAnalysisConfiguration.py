@@ -11,6 +11,7 @@ class WalkForwardAnalysisConfiguration(Configuration):
             config_data = json.loads(f.read())
 
         # Define data members
+        self.cash = float(config_data['cash'])
         self.num_processors = int(config_data['num_processors'])
         self.optimizer_name = config_data['optimizer_name']
         self.optimization_metric = config_data['optimization_metric']
@@ -21,6 +22,8 @@ class WalkForwardAnalysisConfiguration(Configuration):
         self.sample_period = config_data['sample_period']
 
         # Validate input parameters
+        if(not self.cash):
+            raise ValueError("Input cash in Configuration is invalid.")
         if(not self.num_processors):
             raise ValueError("Input num_processors in WalkForwardAnalysisConfiguration is invalid.")
         if(not self.optimizer_name):
@@ -41,6 +44,7 @@ class WalkForwardAnalysisConfiguration(Configuration):
     def __str__(self):
         super(WalkForwardAnalysisConfiguration, self).__str__()
 
+        print('Cash:                             %s' % (self.cash))
         print('Number of processors:             %s' % (self.num_processors))
         print('Optimizer name:                   %s' % (self.optimizer_name))
         print('Optimization metric:              %s' % (self.optimization_metric))
