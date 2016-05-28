@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from pprint import pprint
+import pickle
+from datetime import datetime
 
 
 class OptimizationResults(object):
@@ -13,4 +14,4 @@ class OptimizationResults(object):
         pass
 
     def save_pickle(self, file_uri):
-    	pass
+        pickle.dump(self, open('%s/optimization_results_%s.p' % (file_uri, datetime.now()), "wb"))

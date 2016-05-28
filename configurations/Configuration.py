@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd
 
@@ -10,6 +11,10 @@ class Configuration(object):
             config_data = json.loads(f.read())
 
         # Define data members
+        if(not str(config_data['results_uri'])):
+            self.results_uri = os.path.dirname(os.path.realpath(__file__))
+        else:
+            self.results_uri = config_data['results_uri']
         self.algorithm_name = config_data['algorithm_name']
         self.start_date = pd.datetime.strptime(config_data['start_date'], "%Y-%m-%d")
         self.end_date = pd.datetime.strptime(config_data['end_date'], "%Y-%m-%d")
@@ -24,6 +29,8 @@ class Configuration(object):
         self.history_window = int(config_data['history_window'])
 
         # Validate input parameters
+        # if(not self.results_uri):
+        #     raise ValueError("Input results_uri in Configuration is invalid.")
         if(not self.algorithm_name):
             raise ValueError("Input algorithm_name in Configuration is invalid.")
         if(not self.start_date):
@@ -49,6 +56,7 @@ class Configuration(object):
 
     def __str__(self):
         print('************************ CONFIGURATION PARAMETERS ************************')
+        print('Results URI:                      %s' % (self.results_uri))
         print('Algorithm name:                   %s' % (self.algorithm_name))
         print('Start date:                       %s' % (self.start_date))
         print('End date:                         %s' % (self.end_date))

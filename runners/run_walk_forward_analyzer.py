@@ -23,4 +23,8 @@ if __name__ == '__main__':
     # Display results
     #results.print_results()
 
-    # TODO: Store the results in a binary file
+    # Store the results in a binary file
+    print('Storing the results...')
+    results.save_pickle(config.results_uri)
+    print('Results stored!')
+    print
