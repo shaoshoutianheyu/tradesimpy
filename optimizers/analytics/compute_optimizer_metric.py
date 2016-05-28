@@ -10,4 +10,5 @@ def compute_optimizer_metric(metric_name, backtest_result, frequency):
     elif metric_name == 'sortinoratio':
         return None #optimizer_analytics.sortino_ratio(backtest_result.log_returns)
     else:
-        ex.AttributeError.message('ERROR: Unknown optimizer function %s' % (optimizer_name))
+    	pass
+        # ex.AttributeError.message('ERROR: Unknown objective function %s' % (metric_name))
