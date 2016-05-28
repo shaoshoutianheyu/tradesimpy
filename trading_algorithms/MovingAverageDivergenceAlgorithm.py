@@ -17,6 +17,8 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
         self.prev_ma_short = 0.0
 
     def set_parameters(self, parameters):
+        TradingAlgorithm.set_parameters(self, parameters)
+
         self.ma_long_window = int(parameters['ma_long_window'])
         self.ma_short_window = int(parameters['ma_short_window'])
         self.open_long = parameters['open_long']

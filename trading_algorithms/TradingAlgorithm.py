@@ -11,3 +11,6 @@ class TradingAlgorithm(object):
         self.position_is_open = {}
         for ticker in self.tickers:
             self.position_is_open[ticker] = False
+
+    def set_parameters(self, parameters):
+    	self.parameters = parameters

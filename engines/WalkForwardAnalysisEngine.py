@@ -42,7 +42,7 @@ class WalkForwardAnalysisEngine(object):
         print('Ran the walk forward analyzer!')
         print
 
-        exit(0)
+        # exit(0)
 
         return walk_forward_analyzer.results
 

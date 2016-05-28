@@ -92,7 +92,7 @@ class Backtester(object):
             for ticker, share_count in temp_purchased_shares.iteritems():
                 self._execute_transaction(date=date, ticker=ticker, close_position=True, share_count=None, position_percent=1.0)
 
-        # Save results locally
+        # Save results
         self.results = BacktestResults(self.backtest_id, self.cash_amount, self.invested_amount, self.commissions, self.transactions)
 
         return self.results

@@ -5,6 +5,7 @@ from pandas.tseries.offsets import BDay
 from pprint import pprint
 from datetime import date, timedelta
 import Optimizer
+from WalkForwardAnalysisResults import WalkForwardAnalysisResults
 
 
 class WalkForwardAnalyzer(object):
@@ -19,8 +20,9 @@ class WalkForwardAnalyzer(object):
     def run(self, data, start_date, end_date, cash):
         sample_periods = self.create_sample_periods(data, start_date, end_date, self.in_sample_periods, \
             self.out_of_sample_periods, self.sample_period)
-        # pprint(sample_periods)
-        # exit(0)
+
+        # Initialize results
+        self.results = WalkForwardAnalysisResults()
 
         # Perform the walk forward analysis for all given sample periods
         for periods in sample_periods:
@@ -37,14 +39,8 @@ class WalkForwardAnalyzer(object):
                 optimizer_data[ticker] = ticker_data[in_start_date:in_end_date]
                 backtester_data[ticker] = ticker_data[out_start_date:out_end_date]
             
-            # pprint(optimizer_data)
-            # pprint(backtester_data)
-            # exit(0)
-
             # Run the optimizer
             self.optimizer.run(optimizer_data)
-            # pprint(self.optimizer.results.optimal_parameters)
-            # exit(0)
 
             # Run the backtester using the optimal trading algorithm parameters
             self.backtester.trading_algorithm.set_parameters(self.optimizer.results.optimal_parameters)
@@ -52,9 +48,9 @@ class WalkForwardAnalyzer(object):
 
             # Update cash holdings
             cash = self.backtester.results.cash[-1]
-            exit(0)
 
-            # TODO: Store results
+            # Save results
+            self.results.add_results(self.optimizer.results, self.backtester.results)
 
 
     def create_sample_periods(self, data, start_date, end_date, in_sample_periods, out_of_sample_periods, sample_period):

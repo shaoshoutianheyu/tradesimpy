@@ -38,3 +38,6 @@ class BacktestResults(object):
         frame['Transactions'] = self.transactions
 
         pprint(frame)
+
+    def save_pickle(self, file_uri):
+        pass

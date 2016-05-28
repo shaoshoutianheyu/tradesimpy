@@ -11,3 +11,6 @@ class OptimizationResults(object):
 
     def print_results(self):
         pass
+
+    def save_pickle(self, file_uri):
+    	pass
