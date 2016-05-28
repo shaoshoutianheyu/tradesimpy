@@ -2,7 +2,6 @@ import re
 import pandas as pd
 import quandl
 from pandas.tseries.offsets import BDay
-from pprint import pprint
 import exceptions as ex
 
 QUANDL_API_KEY = 'B8h6uA58skuqwcAtL_tf'

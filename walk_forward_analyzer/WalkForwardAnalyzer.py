@@ -1,8 +1,6 @@
-import numpy as np
 import exceptions as ex
 import pandas as pd
 from pandas.tseries.offsets import BDay
-from pprint import pprint
 from datetime import date, timedelta
 import Optimizer
 from WalkForwardAnalysisResults import WalkForwardAnalysisResults

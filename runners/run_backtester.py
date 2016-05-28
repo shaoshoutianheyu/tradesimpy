@@ -2,7 +2,6 @@ from runner_script_import import *
 import sys
 from BacktestConfiguration import BacktestConfiguration
 from BacktestEngine import BacktestEngine
-from pprint import pprint
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

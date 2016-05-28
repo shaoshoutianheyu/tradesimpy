@@ -2,7 +2,6 @@ from runner_script_import import *
 import sys
 from OptimizationConfiguration import OptimizationConfiguration
 from OptimizationEngine import OptimizationEngine
-from pprint import pprint
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

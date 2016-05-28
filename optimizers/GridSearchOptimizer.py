@@ -1,11 +1,9 @@
 from Optimizer import Optimizer
-from analytics import optimizer_analytics
 import Backtester as b
 from OptimizationResults import OptimizationResults
 import itertools
 import numpy as np
 import multiprocessing as mp
-from pprint import pprint
 
 
 def _backtest(backtest_args):

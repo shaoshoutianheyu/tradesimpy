@@ -1,5 +1,4 @@
 from TradingAlgorithm import TradingAlgorithm
-from pprint import pprint
 
 
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):

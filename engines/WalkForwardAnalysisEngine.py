@@ -2,9 +2,9 @@ from walk_forward_analysis_engine_import import *
 from WalkForwardAnalysisConfiguration import WalkForwardAnalysisConfiguration
 from WalkForwardAnalyzer import WalkForwardAnalyzer
 import Backtester as b
-import trading_algorithms.TradingAlgorithmFactory as taf
+import trading_algorithm_factory as taf
 import optimizer_factory as of
-import data.market_data as market_data
+import market_data as market_data
 import exceptions as ex
 from pprint import pprint
 

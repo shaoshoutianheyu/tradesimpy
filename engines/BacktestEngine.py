@@ -1,8 +1,8 @@
 from backtest_engine_import import *
 from BacktestConfiguration import BacktestConfiguration
 from Backtester import Backtester
-import trading_algorithms.TradingAlgorithmFactory as taf
-import data.market_data as market_data
+import trading_algorithm_factory as taf
+import market_data as market_data
 
 
 class BacktestEngine(object):
