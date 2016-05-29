@@ -4,7 +4,7 @@ import sys
 # Provide directory paths for necessary imports
 lib_paths =\
     [
-        os.path.abspath('./indicators/')
+        # os.path.abspath('./indicators/')
     ]
 
 for lib_path in lib_paths:

@@ -1,12 +1,10 @@
 from walk_forward_analysis_engine_import import *
-from WalkForwardAnalysisConfiguration import WalkForwardAnalysisConfiguration
 from WalkForwardAnalyzer import WalkForwardAnalyzer
+from TradingAlgorithm import TradingAlgorithm
 import Backtester as b
-import trading_algorithm_factory as taf
 import optimizer_factory as of
 import market_data as market_data
 import exceptions as ex
-from pprint import pprint
 
 
 class WalkForwardAnalysisEngine(object):
@@ -24,7 +22,8 @@ class WalkForwardAnalysisEngine(object):
             config.start_date, config.end_date, data_request_history_window)
 
         # Create the trading algorithm w/o parameters
-        trading_algorithm = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window)
+        trading_algorithm = TradingAlgorithm.create_trading_algorithm(config.algorithm_uri, config.tickers, \
+            config.history_window)
 
         # Create the optimizer
         optimizer = of.create_optimizer(config.num_processors, config.optimizer_name, trading_algorithm, config.commission, \
@@ -42,8 +41,6 @@ class WalkForwardAnalysisEngine(object):
         walk_forward_analyzer.run(data, config.start_date, config.end_date, config.cash)
         print('Ran the walk forward analyzer!')
         print
-
-        # exit(0)
 
         return walk_forward_analyzer.results
 

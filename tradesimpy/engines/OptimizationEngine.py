@@ -1,10 +1,9 @@
 from optimization_engine_import import *
 from OptimizationConfiguration import OptimizationConfiguration
 from Optimizer import Optimizer
-import trading_algorithm_factory as taf
+from TradingAlgorithm import TradingAlgorithm
 import optimizer_factory as of
 import market_data as market_data
-from pprint import pprint
 
 
 class OptimizationEngine(object):
@@ -18,7 +17,8 @@ class OptimizationEngine(object):
             config.start_date, config.end_date, config.history_window)
 
         # Create the trading algorithm w/o parameters
-        trading_algorithm = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window)
+        trading_algorithm = TradingAlgorithm.create_trading_algorithm(config.algorithm_uri, config.tickers, \
+            config.history_window)
 
         # Setup and run the optimizer
         optimizer = of.create_optimizer(config.num_processors, config.optimizer_name, trading_algorithm, config.commission,

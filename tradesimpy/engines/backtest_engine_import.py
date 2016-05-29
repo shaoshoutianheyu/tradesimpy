@@ -4,11 +4,9 @@ import sys
 # Provide directory paths for necessary imports
 lib_paths =\
     [
-        os.path.abspath('../'),
         os.path.abspath('../data/'),
         os.path.abspath('../backtester/'),
-        os.path.abspath('../trading_algorithms/'),
-        os.path.abspath('../configurations/')
+        os.path.abspath('../trading_algorithm/'),
     ]
 
 for lib_path in lib_paths:

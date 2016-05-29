@@ -1,7 +1,6 @@
 from backtest_engine_import import *
-from BacktestConfiguration import BacktestConfiguration
 from Backtester import Backtester
-import trading_algorithm_factory as taf
+from TradingAlgorithm import TradingAlgorithm
 import market_data as market_data
 
 
@@ -16,8 +15,8 @@ class BacktestEngine(object):
             config.start_date, config.end_date, config.history_window)
 
         # Create the trading algorithm
-        trading_algorithm = taf.create_trading_algorithm(config.algorithm_name, config.tickers, config.history_window, \
-            config.algorithm_parameters)
+        trading_algorithm = TradingAlgorithm.create_trading_algorithm(config.algorithm_uri, config.tickers, \
+            config.history_window, config.algorithm_parameters)
 
         # Setup and run the backtester
         backtester = Backtester(0, trading_algorithm, config.cash, config.commission, config.ticker_spreads)

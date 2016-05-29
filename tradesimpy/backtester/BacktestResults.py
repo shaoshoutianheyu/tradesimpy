@@ -39,7 +39,7 @@ class BacktestResults(object):
         # frame['Fees'] = self.fees
         # frame['Transactions'] = self.transactions
 
-        # pprint(frame)
+        # print(frame)
 
     def save_pickle(self, file_uri):
         pickle.dump(self, open('%s/backtest_results_%s.p' % (file_uri, datetime.now()), "wb"))
