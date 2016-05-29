@@ -65,3 +65,4 @@ target/
 
 # Sublime stuff
 *.sublime-workspace
+*.sublime-project
