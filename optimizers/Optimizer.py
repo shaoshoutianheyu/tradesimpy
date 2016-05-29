@@ -7,8 +7,9 @@ import operator
 class Optimizer(object):
 
     def __init__(self, num_processors, trading_algorithm, optimization_metric, optimization_metric_ascending,
-        optimization_parameters):
+        optimization_parameters, frequency):
 
+        # Set processor count for parallelization
         if(num_processors > mp.cpu_count()):
             self.num_processors = mp.cpu_count()
         else:
@@ -18,6 +19,7 @@ class Optimizer(object):
         self.optimization_metric = optimization_metric
         self.optimization_metric_ascending = optimization_metric_ascending
         self.optimization_parameters = optimization_parameters
+        self.frequency = frequency
 
     @staticmethod
     def get_optimal_parameters(backtest_results, optimization_metric, optimization_parameter_sets, ascending, frequency):

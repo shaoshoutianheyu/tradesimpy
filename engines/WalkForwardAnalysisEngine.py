@@ -28,7 +28,8 @@ class WalkForwardAnalysisEngine(object):
 
         # Create the optimizer
         optimizer = of.create_optimizer(config.num_processors, config.optimizer_name, trading_algorithm, config.commission, \
-            config.ticker_spreads, config.optimization_metric, config.optimization_metric_ascending, config.optimization_parameters)
+            config.ticker_spreads, config.optimization_metric, config.optimization_metric_ascending, config.optimization_parameters,
+            config.time_resolution)
 
         # Create the backtester
         backtester = b.Backtester(-1, trading_algorithm, config.cash, config.commission, config.ticker_spreads)

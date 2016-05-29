@@ -20,9 +20,9 @@ def _backtest(backtest_args):
 class GridSearchOptimizer(Optimizer):
 
     def __init__(self, num_processors, trading_algorithm, commission, ticker_spreads, optimization_metric,
-        optimization_metric_ascending, optimization_parameters):
+        optimization_metric_ascending, optimization_parameters, frequency):
         super(GridSearchOptimizer, self).__init__(num_processors, trading_algorithm, optimization_metric,
-            optimization_metric_ascending, optimization_parameters)
+            optimization_metric_ascending, optimization_parameters, frequency)
 
         # Data members
         self.commission = commission
@@ -47,10 +47,10 @@ class GridSearchOptimizer(Optimizer):
 
         # Find optimal parameters
         optimal_parameters = Optimizer.get_optimal_parameters(backtest_results, self.optimization_metric, \
-            self.optimization_parameter_sets, self.optimization_metric_ascending, 'daily')
+            self.optimization_parameter_sets, self.optimization_metric_ascending, self.frequency)
 
         # Save results
-        self.results = OptimizationResults(backtest_results, optimal_parameters)
+        self.results = OptimizationResults(backtest_results, optimal_parameters, self.optimization_parameter_sets)
 
         return self.results
 

@@ -23,7 +23,7 @@ class OptimizationEngine(object):
         # Setup and run the optimizer
         optimizer = of.create_optimizer(config.num_processors, config.optimizer_name, trading_algorithm, config.commission,
             config.ticker_spreads, config.optimization_metric, config.optimization_metric_ascending,
-            config.optimization_parameters)
+            config.optimization_parameters, config.time_resolution)
         print('Running the optimizer...')
         optimizer.run(data)
         print('Ran optimizer!')

@@ -3,7 +3,6 @@
     "algorithm_name"                    : "MovingAverageDivergenceAlgorithm",
     "start_date"                        : "2013-01-01",
     "end_date"                          : "2015-12-15",
-    "cash"                              : 10000,
     "time_resolution"                   : "daily",
     "tickers"                           : [
                                             "INDEX_SPY"
@@ -22,6 +21,7 @@
                                           ],
     "commission"                        : 0.0,
     "history_window"                    : 20,
+    "cash"                              : 10000,
     "num_processors"                    : 8,
     "optimizer_name"                    : "GridSearchOptimizer",
     "optimization_metric"               : "SharpeRatio",

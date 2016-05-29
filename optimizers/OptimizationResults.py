@@ -4,9 +4,10 @@ from datetime import datetime
 
 class OptimizationResults(object):
 
-    def __init__(self, backtest_results, optimal_parameters):
+    def __init__(self, backtest_results, optimal_parameters, parameter_sets):
         self.backtest_results = backtest_results
         self.optimal_parameters = optimal_parameters
+        self.parameter_sets = parameter_sets
 
     def print_results(self):
         pass
