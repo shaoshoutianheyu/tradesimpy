@@ -18,8 +18,11 @@ class WalkForwardAnalysisEngine(object):
         data_request_history_window = (config.in_sample_periods * freq_factor) + config.history_window
 
         # Load market data
+        print('Loading data...')
         data = market_data.load_market_data(config.tickers, config.ticker_types, config.data_sources, \
             config.start_date, config.end_date, data_request_history_window)
+        print('Data loaded!')
+        print
 
         # Create the trading algorithm w/o parameters
         trading_algorithm = TradingAlgorithm.create_trading_algorithm(config.algorithm_uri, config.tickers, \
