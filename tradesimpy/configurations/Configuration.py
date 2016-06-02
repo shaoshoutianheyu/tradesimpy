@@ -13,6 +13,7 @@ class Configuration(object):
         # Define data members
         self.results_uri = config_data['results_uri']
         self.algorithm_uri = config_data['algorithm_uri']
+        self.csv_data_uri = config_data['csv_data_uri']
         self.start_date = pd.datetime.strptime(config_data['start_date'], "%Y-%m-%d")
         self.end_date = pd.datetime.strptime(config_data['end_date'], "%Y-%m-%d")
         self.time_resolution = config_data['time_resolution']
@@ -29,6 +30,8 @@ class Configuration(object):
             raise ValueError("Input results_uri in Configuration is invalid.")
         if(not self.algorithm_uri):
             raise ValueError("Input algorithm_uri in Configuration is invalid.")
+        if(not self.csv_data_uri):
+            raise ValueError("Input csv_data_uri in Configuration is invalid.")
         if(not self.start_date):
             raise ValueError("Input start_date in Configuration is invalid.")
         if(not self.end_date):
@@ -52,6 +55,7 @@ class Configuration(object):
         print('************************ CONFIGURATION PARAMETERS ************************')
         print('Results URI:                      %s' % (self.results_uri))
         print('Algorithm URI:                    %s' % (self.algorithm_uri))
+        print('CSV data URI:                     %s' % (self.csv_data_uri))
         print('Start date:                       %s' % (self.start_date))
         print('End date:                         %s' % (self.end_date))
         print('Time resolution:                  %s' % (self.time_resolution))

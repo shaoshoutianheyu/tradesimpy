@@ -14,6 +14,8 @@ class QuandlDataSource(DataSource):
 	def request(self, tickers, ticker_types, start_date, end_date, history_window):
 		# REQUIRED DATA MEMBER
 		data_start_date = start_date - BDay(history_window + 21)
+
+		# TODO: Check cache before executing request
 		
 		# Build request and execute
 		quandl.ApiConfig.api_key = self.api_key
@@ -28,7 +30,7 @@ class QuandlDataSource(DataSource):
 	    # Discover data needed for analysis process, especially for history windows
 		for column_name, series in raw_data.iteritems():
 			ticker_name, series_name = self.column_name_to_ticker_series_name(column_name)
-			data_dict[ticker_name][series_name] = self.trim_series_observations(series, start_date, history_window)
+			data_dict[ticker_name][series_name] = self.trim_series_observations(series, start_date, end_date, history_window)
 
 		# Save data as dictionary of data frames
 		data = {}

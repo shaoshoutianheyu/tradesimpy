@@ -4,9 +4,13 @@ import quandl
 from pandas.tseries.offsets import BDay
 import data_source_factory as dsf
 
-def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, history_window):
+def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, history_window, csv_data_uri=None):
+    # Check for unique tickers
+    if(len(tickers) != len(list(set(tickers)))):
+        raise AttributeError("There are non-unique tickers attempted to be loaded.")
+
     # Create the unique data sources
-    unique_data_sources = dsf.create_data_sources(data_sources)
+    unique_data_sources = dsf.create_data_sources(data_sources, csv_data_uri)
 
     # Group the tickers and ticker types by data source
     frame = pd.DataFrame({'tickers': tickers, 'ticker_types': ticker_types, 'data_sources': data_sources})
@@ -23,7 +27,8 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
             if(key in data.keys()):
                 raise KeyError("There is more than one of the same ticker name: %s" % key)
 
-        # Add data
         data.update(group_data)
+
+    # exit(0)
 
     return data
