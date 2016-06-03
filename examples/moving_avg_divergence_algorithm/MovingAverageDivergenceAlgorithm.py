@@ -1,4 +1,5 @@
 from TradingAlgorithm import TradingAlgorithm
+from TradeDecisions import TradeDecisions
 
 
 class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
@@ -26,7 +27,7 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
         #self.close_short = parameters['close_short']
 
     def trade_decision(self, data):
-        trade_decision = {}
+        trade_decisions = TradeDecisions()
 
         for ticker in self.tickers:
             # Compute moving average difference
@@ -46,10 +47,10 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
             if self.long_over_short_cross is True:
                 # Decide whether or not to open a long position
                 if not self.position_is_open[ticker] and ma_diff > self.open_long:
-                    trade_decision[ticker] = {'position': 1, 'share_count': None, 'position_percent': 0.99 / len(self.tickers)}
+                    trade_decisions.add(ticker, 'open', long_or_short='long', position_percent=0.99 / len(self.tickers))
                     self.position_is_open[ticker] = True
                 elif self.position_is_open[ticker] and ma_diff < self.close_long:
-                    trade_decision[ticker] = {'position': 0, 'share_count': None, 'position_percent': 0.0}
+                    trade_decisions.add(ticker, 'close', position_percent=0.0)
                     self.position_is_open[ticker] = False
                     self.long_over_short_cross = False
             elif self.short_over_long_cross is True:
@@ -66,4 +67,4 @@ class MovingAverageDivergenceAlgorithm(TradingAlgorithm):
             self.prev_ma_long = ma_long
             self.prev_ma_short = ma_short
 
-        return trade_decision
+        return trade_decisions
