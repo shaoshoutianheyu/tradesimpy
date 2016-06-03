@@ -27,6 +27,9 @@ class Backtester(object):
         if self.cash is None:
             self.cash = 10000
 
+        if(self.cash <= 0):
+            raise AttributeError("Cash must be greater than zero.")
+
         # Find the tradable dates so as to include enough data to accommodate for history window
         dates = []
         for ticker in self.trading_algorithm.tickers:
@@ -57,6 +60,7 @@ class Backtester(object):
             self.transactions[date] = {}
 
             # Execute trade decisions made during yesterday's close
+            # TODO: Execute sales before purchases to be sure cash is available
             for ticker, decision in self.trade_decision.iteritems():
                 if decision['position'] == 0 and ticker in self.purchased_shares.keys():  # Close existing position
                     self._execute_transaction(date=date, ticker=ticker, close_position=True, share_count=decision['share_count'], \
@@ -103,10 +107,9 @@ class Backtester(object):
         current_invested_amount = self._mark_portfolio_to_market(date)
         self.commissions[date] += self.commission
 
-        # TODO: Keep track of potential leverage
-
         if close_position:
             # TODO: Allow user to sell portions of position, currently closes entire position
+            # Close position
             share_price = (1 - self.ticker_spreads[ticker_idx] / 2) * self.data[ticker].loc[date, 'Open']
             self.cash_amount[date] = self.prev_cash_amount + (self.purchased_shares[ticker] * share_price) - self.commission
             self.invested_amount[date] = current_invested_amount - (self.purchased_shares[ticker] * share_price)
@@ -118,8 +121,16 @@ class Backtester(object):
             del self.purchased_shares[ticker]
         else:
             share_price = (1 + self.ticker_spreads[ticker_idx] / 2) * self.data[ticker].loc[date, 'Open']
+            share_count = self._determine_share_count(self.cash_amount[date], share_price, share_count, position_percent)
+
+            # Prior to purchase, be sure enough cash is available for purchase
+            if((share_price * share_count) > self.cash):
+                # TODO: Log warning about not enough available cash to purchase shares
+                return None
+
+            # Open position
             self.open_share_price[ticker] = share_price
-            self.purchased_shares[ticker] = self._determine_share_count(self.cash_amount[date], share_price, share_count, position_percent)
+            self.purchased_shares[ticker] = share_count
             self.cash_amount[date] = self.prev_cash_amount - (self.purchased_shares[ticker] * share_price) - self.commission
             self.invested_amount[date] = self.prev_invested_amount + (self.purchased_shares[ticker] * self.data[ticker].loc[date, 'Close'])
             self.transactions[date][ticker] = {

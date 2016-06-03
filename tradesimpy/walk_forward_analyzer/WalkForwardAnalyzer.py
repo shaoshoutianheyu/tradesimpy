@@ -16,6 +16,10 @@ class WalkForwardAnalyzer(object):
         self.backtester = backtester
 
     def run(self, data, start_date, end_date, cash):
+        if(cash <= 0):
+            raise AttributeError("Cash must be greater than zero.")
+
+        # Create in- and out-of-sample periods for optimization and backtesting
         sample_periods = self.create_sample_periods(data, start_date, end_date, self.in_sample_periods, \
             self.out_of_sample_periods, self.sample_period)
 
