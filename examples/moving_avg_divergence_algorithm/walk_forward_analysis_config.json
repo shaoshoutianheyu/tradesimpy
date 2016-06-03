@@ -24,6 +24,7 @@
     "commission"                        : 0.0,
     "history_window"                    : 20,
     "cash"                              : 10000,
+    
     "num_processors"                    : 8,
     "optimizer_name"                    : "GridSearchOptimizer",
     "optimization_metric"               : "SharpeRatio",
@@ -34,6 +35,7 @@
                                             "open_long"         : [-0.25, -0.25, 1],
                                             "close_long"        : [0.4, 0.4, 1]
                                           },
+
     "in_sample_periods"                 : 24,
     "out_of_sample_periods"             : 6,
     "sample_period"                     : "monthly"

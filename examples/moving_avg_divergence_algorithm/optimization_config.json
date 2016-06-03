@@ -23,6 +23,7 @@
                                           ],
     "commission"                        : 0.0,
     "history_window"                    : 20,
+
     "num_processors"                    : 8,
     "optimizer_name"                    : "GridSearchOptimizer",
     "optimization_metric"               : "sharpe_ratio",
