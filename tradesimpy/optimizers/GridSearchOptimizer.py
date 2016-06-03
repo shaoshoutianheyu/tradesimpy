@@ -8,14 +8,13 @@ import multiprocessing as mp
 
 def _backtest(backtest_args):
     # Extract backtest arguments
-    backtest_id, parameters, trading_algorithm, commission, ticker_spreads, data = backtest_args
+    backtest_id, parameters, trading_algorithm, commission, ticker_spreads, data, start_date, end_date = backtest_args
 
     # Setup the trading algorithm and backtester
-    trading_algorithm.set_parameters(parameters=parameters)
-    backtester = b.Backtester(backtest_id=backtest_id, trading_algorithm=trading_algorithm, cash=10000, \
-        commission=commission, ticker_spreads=ticker_spreads)
+    trading_algorithm.set_parameters(parameters)
+    backtester = b.Backtester(backtest_id, trading_algorithm, 10000, commission, ticker_spreads)
 
-    return backtester.run(data=data)
+    return backtester.run(data, start_date, end_date)
 
 class GridSearchOptimizer(Optimizer):
 
@@ -30,7 +29,7 @@ class GridSearchOptimizer(Optimizer):
         self.optimization_parameter_sets = self.get_param_sets(self.optimization_parameters)
         self.num_paramameter_sets = len(self.optimization_parameter_sets)
 
-    def run(self, data):
+    def run(self, data, start_date, end_date):
         # Prepare input data for running parallel backtests
         backtest_args = itertools.izip(
             range(len(self.optimization_parameter_sets)),
@@ -38,7 +37,9 @@ class GridSearchOptimizer(Optimizer):
             itertools.repeat(self.trading_algorithm),
             itertools.repeat(self.commission),
             itertools.repeat(self.ticker_spreads),
-            itertools.repeat(data)
+            itertools.repeat(data),
+            itertools.repeat(start_date),
+            itertools.repeat(end_date)
         )
 
         # Run all backtest scenarios in parallel

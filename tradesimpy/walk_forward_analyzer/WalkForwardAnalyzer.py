@@ -38,11 +38,11 @@ class WalkForwardAnalyzer(object):
                 backtester_data[ticker] = ticker_data[out_start_date:out_end_date]
             
             # Run the optimizer
-            self.optimizer.run(optimizer_data)
+            self.optimizer.run(optimizer_data, in_start_date, in_end_date)
 
             # Run the backtester using the optimal trading algorithm parameters
             self.backtester.trading_algorithm.set_parameters(self.optimizer.results.optimal_parameters)
-            self.backtester.run(backtester_data, cash)
+            self.backtester.run(backtester_data, out_start_date, out_end_date, cash)
 
             # Update cash holdings
             cash = self.backtester.results.cash[-1]

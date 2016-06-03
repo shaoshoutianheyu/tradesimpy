@@ -11,7 +11,6 @@ class Backtester(object):
         self.backtest_id = backtest_id
         self.trading_algorithm = trading_algorithm
         self.cash = cash
-        self.start_dates = {}
         self.commission = commission
         self.ticker_spreads = ticker_spreads
         self.open_share_price = {}
@@ -19,7 +18,7 @@ class Backtester(object):
         self.prev_cash_amount = self.cash
         self.prev_invested_amount = 0.0
 
-    def run(self, data, cash=None):
+    def run(self, data, start_date, end_date, cash=None):
         self.data = data
 
         # Handle missing cash value
@@ -28,12 +27,12 @@ class Backtester(object):
         if self.cash is None:
             self.cash = 10000
 
-        # Determine trading start dates for each ticker
+        # Find the tradable dates so as to include enough data to accommodate for history window
+        dates = []
         for ticker in self.trading_algorithm.tickers:
-            self.start_dates[ticker] = self.data[ticker].index[self.trading_algorithm.history_window]
-
-        # TODO: Make this more flexible for multiple tickers!
-        self.dates = self.data[self.trading_algorithm.tickers[0]][self.start_dates[self.trading_algorithm.tickers[0]]:].index.tolist()
+            # TODO: Log what date each ticker will be able to begin trading properly
+            dates.extend(self.data[ticker].index[self.trading_algorithm.history_window:])
+        dates = list(set(dates))
 
         # Intialize daily results structures
         self.portfolio_value = {}
@@ -44,15 +43,14 @@ class Backtester(object):
 
         # Initialize simulation results helper variables
         algo_window_length = self.trading_algorithm.history_window
-        algo_data = {}
         self.trade_decision = {}
         self.purchased_shares = {}
         self.open_share_price = {}
         self.prev_cash_amount = self.cash
         self.prev_invested_amount = 0.0
 
-        # Iterate over all trading days
-        for date in self.dates:
+        # Iterate over all tradable days
+        for date in dates:
             self.cash_amount[date] = self.prev_cash_amount
             self.invested_amount[date] = self._mark_portfolio_to_market(date)
             self.commissions[date] = 0.0
@@ -73,15 +71,20 @@ class Backtester(object):
                     #    position_percent=-decision['position_percent'])
 
             # Retrieve data needed for algorithm
+            algorithm_data = {}
             for ticker in self.trading_algorithm.tickers:
-                algo_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
+                # Only include data for those tickers which can trade TODAY (i.e., existing present observation)
+                if(date in self.data[ticker].index):
+                    algorithm_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
+                
+                # TODO: Log the tickers which cannot be traded today
 
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[date]
             self.prev_invested_amount = self.invested_amount[date]
 
             # Determine trade decisions for tomorrow's open
-            self.trade_decision = self.trading_algorithm.trade_decision(algo_data)
+            self.trade_decision = self.trading_algorithm.trade_decision(algorithm_data)
 
         # Close all open positions after finishing the backtest
         if len(self.purchased_shares) != 0:

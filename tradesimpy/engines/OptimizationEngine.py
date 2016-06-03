@@ -28,7 +28,7 @@ class OptimizationEngine(object):
             config.ticker_spreads, config.optimization_metric, config.optimization_metric_ascending,
             config.optimization_parameters, config.time_resolution)
         print('Running the optimizer...')
-        optimizer.run(data)
+        optimizer.run(data, config.start_date, config.end_date)
         print('Ran optimizer!')
         print
 

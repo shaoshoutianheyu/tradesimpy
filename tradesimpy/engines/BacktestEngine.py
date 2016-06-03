@@ -24,7 +24,7 @@ class BacktestEngine(object):
         # Setup and run the backtester
         backtester = Backtester(0, trading_algorithm, config.cash, config.commission, config.ticker_spreads)
         print('Running the backtester...')
-        backtester.run(data)
+        backtester.run(data, config.start_date, config.end_date)
         print('Ran backtester!')
         print
 
