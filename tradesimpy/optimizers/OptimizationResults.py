@@ -1,4 +1,5 @@
 import pickle
+import logging as log
 from datetime import datetime
 
 
@@ -9,8 +10,8 @@ class OptimizationResults(object):
         self.optimal_parameters = optimal_parameters
         self.parameter_sets = parameter_sets
 
-    def print_results(self):
-        pass
-
     def save_pickle(self, file_uri):
-        pickle.dump(self, open('%s/optimization_results_%s.p' % (file_uri, datetime.now()), "wb"))
+        log.info('Storing the results...')
+    	pickle.dump(self, open('%s/optimization_results_%s.p' % (file_uri, datetime.now()), "wb"))
+        log.info('Results stored!')
+    	print

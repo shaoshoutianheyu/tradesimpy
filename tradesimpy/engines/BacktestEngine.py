@@ -2,6 +2,8 @@ from backtest_engine_import import *
 from Backtester import Backtester
 from TradingAlgorithm import TradingAlgorithm
 import market_data as market_data
+import logger
+import logging as log
 
 
 class BacktestEngine(object):
@@ -10,11 +12,13 @@ class BacktestEngine(object):
         pass
 
     def run(self, config):
+        logger.init_logger(config.log_uri)
+
         # Load market data
-        print('Loading data...')
+        log.info('Loading data...')
         data = market_data.load_market_data(config.tickers, config.ticker_types, config.data_sources, \
             config.start_date, config.end_date, config.history_window, config.csv_data_uri)
-        print('Data loaded!')
+        log.info('Data loaded!')
         print
 
         # Create the trading algorithm
@@ -23,9 +27,9 @@ class BacktestEngine(object):
 
         # Setup and run the backtester
         backtester = Backtester(0, trading_algorithm, config.cash, config.commission, config.ticker_spreads)
-        print('Running the backtester...')
+        log.info('Running the backtester...')
         backtester.run(data, config.start_date, config.end_date)
-        print('Ran backtester!')
+        log.info('Ran backtester!')
         print
 
         return backtester.results

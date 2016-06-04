@@ -5,8 +5,7 @@ from BacktestEngine import BacktestEngine
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print('Please provide valid parameters {[configuration file]}')
-        exit(1)
+        raise AttributeError('Please provide valid parameters {[configuration file]}')
 
     args = sys.argv[1:]
     config_uri = args[0]
@@ -19,11 +18,5 @@ if __name__ == '__main__':
     backtest_engine = BacktestEngine()
     results = backtest_engine.run(config)
 
-    # Display results
-    #results.print_results()
-
     # Store the results in a binary file
-    print('Storing the results...')
     results.save_pickle(config.results_uri)
-    print('Results stored!')
-    print

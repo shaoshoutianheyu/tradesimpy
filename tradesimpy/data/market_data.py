@@ -2,6 +2,7 @@ import re
 import pandas as pd
 import quandl
 import numpy as np
+import logging as log
 import data_source_factory as dsf
 from pandas.tseries.offsets import BDay
 from datetime import datetime
@@ -40,11 +41,10 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
                 raise AttributeError("There is more than one of the same ticker name loaded: %s" % ticker_name)
 
             # Check for proper date ranges in data
-            # TODO: Should be set as warnings?
             if(series.index[history_window-1] > start_date):
-                raise AttributeError("The data for ticker %s has a start date greater than %s: %s" % (key, start_date, series.index[0]))
+                log.warning("The data for ticker %s has a start date greater than %s: %s" % (key, start_date, series.index[0]))
             if(series.index[-1] < end_date):
-                raise AttributeError("The data for ticker %s has a end date less than %s: %s" % (key, end_date, series.index[-1]))
+                log.warning("The data for ticker %s has a end date less than %s: %s" % (key, end_date, series.index[-1]))
 
         data.update(group_data)
 

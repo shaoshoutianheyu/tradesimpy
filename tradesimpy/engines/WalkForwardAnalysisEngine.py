@@ -5,6 +5,8 @@ import Backtester as b
 import optimizer_factory as of
 import market_data as market_data
 import exceptions as ex
+import logger
+import logging as log
 
 
 class WalkForwardAnalysisEngine(object):
@@ -13,15 +15,17 @@ class WalkForwardAnalysisEngine(object):
         pass
 
     def run(self, config):
+        logger.init_logger(config.log_uri)
+
         # Estimate data count needed prior to first out-of-sample period
         freq_factor = self._frequency_diff_factor(config.time_resolution, config.sample_period)
         data_request_history_window = (config.in_sample_periods * freq_factor) + config.history_window
 
         # Load market data
-        print('Loading data...')
+        log.info('Loading data...')
         data = market_data.load_market_data(config.tickers, config.ticker_types, config.data_sources, \
             config.start_date, config.end_date, data_request_history_window, config.csv_data_uri)
-        print('Data loaded!')
+        log.info('Data loaded!')
         print
 
         # Create the trading algorithm w/o parameters
@@ -40,9 +44,9 @@ class WalkForwardAnalysisEngine(object):
         walk_forward_analyzer = WalkForwardAnalyzer(config.in_sample_periods, config.out_of_sample_periods, config.sample_period, \
             optimizer, backtester)
 
-        print('Running the walk forward analyzer...')
+        log.info('Running the walk forward analyzer...')
         walk_forward_analyzer.run(data, config.start_date, config.end_date, config.cash)
-        print('Ran the walk forward analyzer!')
+        log.info('Ran the walk forward analyzer!')
         print
 
         return walk_forward_analyzer.results
@@ -63,7 +67,7 @@ class WalkForwardAnalysisEngine(object):
             elif(sample_period == 'yearly'):
                 return 252
             else:
-                ex.AttributeError.message('ERROR: The sample period provided is not supported.')
+                raise AttributeError('ERROR: The sample period provided is not supported.')
         elif(time_resolution == 'weekly'):
             if(sample_period == 'weekly'):
                 return 1
@@ -74,7 +78,7 @@ class WalkForwardAnalysisEngine(object):
             elif(sample_period == 'yearly'):
                 return 52
             else:
-                ex.AttributeError.message('ERROR: The sample period provided is not supported.')
+                raise AttributeError('ERROR: The sample period provided is not supported.')
         elif(time_resolution == 'monthly'):
             if(sample_period == 'monthly'):
                 return 1
@@ -83,19 +87,19 @@ class WalkForwardAnalysisEngine(object):
             elif(sample_period == 'yearly'):
                 return 12
             else:
-                ex.AttributeError.message('ERROR: The sample period provided is not supported.')
+                raise AttributeError('ERROR: The sample period provided is not supported.')
         elif(time_resolution == 'quarterly'):
             if(sample_period == 'quarterly'):
                 return 1
             elif(sample_period == 'yearly'):
                 return 4
             else:
-                ex.AttributeError.message('ERROR: The sample period provided is not supported.')
+                raise AttributeError('ERROR: The sample period provided is not supported.')
         elif(time_resolution == 'yearly'):
             if(sample_period == 'yearly'):
                 return 1
             else:
-                ex.AttributeError.message('ERROR: The sample period provided is not supported.')
+                raise AttributeError('ERROR: The sample period provided is not supported.')
         else:
-            ex.AttributeError.message('ERROR: The time resolution provided is not supported.')
+            raise AttributeError('ERROR: The time resolution provided is not supported.')
 

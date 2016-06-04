@@ -2,6 +2,7 @@
     "results_uri"                       : "/home/grant/Development/Trading/tradesimpy",
     "algorithm_uri"                     : "/home/grant/Development/Trading/tradesimpy/examples/moving_avg_divergence_algorithm/MovingAverageDivergenceAlgorithm.py",
     "csv_data_uri"                      : "/home/grant/Development/Trading/tradesimpy/data",
+    "log_uri"                           : "/home/grant/Development/Trading/tradesimpy",
     
     "start_date"                        : "2013-01-01",
     "end_date"                          : "2015-12-15",

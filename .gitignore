@@ -62,6 +62,7 @@ target/
 # Data ouputs
 *.csv
 *.p
+*.txt
 
 # Sublime stuff
 *.sublime-workspace

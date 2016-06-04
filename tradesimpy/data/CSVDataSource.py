@@ -28,6 +28,6 @@ class CSVDataSource(DataSource):
 					frame = pd.read_csv(os.path.join(root, ticker_file_name), index_col=0, parse_dates=True)
 					
 					# Trim the data based on the prescribed date range
-					data[ticker] = self.trim_frame_observations(frame, start_date, end_date, history_window)
+					data[ticker] = self.trim_frame_observations(frame, ticker, start_date, end_date, history_window)
 
 		return data

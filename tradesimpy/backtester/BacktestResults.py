@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pickle
+import logging as log
 from datetime import datetime
 
 
@@ -27,19 +28,8 @@ class BacktestResults(object):
         # Add log returns series
         self.log_returns = pd.Series(np.log(self.portfolio_value / self.portfolio_value.shift(1)), cash_series.keys()).sort_index()
 
-    def print_results(self):
-        pass
-        # frame = pd.DataFrame()
-        # frame['Portfolio Value'] = self.portfolio_value
-        # frame['Cash'] = self.cash
-        # frame['Invested'] = self.invested
-        # frame['Profit and Loss'] = self.profit_and_loss
-        # frame['Discrete Returns'] = self.discrete_returns
-        # frame['Log Returns'] = self.log_returns
-        # frame['Fees'] = self.fees
-        # frame['Transactions'] = self.transactions
-
-        # print(frame)
-
     def save_pickle(self, file_uri):
+        log.info('Storing the results...')
         pickle.dump(self, open('%s/backtest_results_%s.p' % (file_uri, datetime.now()), "wb"))
+        log.info('Results stored!')
+        print
