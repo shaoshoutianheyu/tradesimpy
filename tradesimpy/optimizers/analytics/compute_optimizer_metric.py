@@ -5,10 +5,7 @@ import exceptions as ex
 def compute_optimizer_metric(metric_name, backtest_result, frequency):
     metric_name = metric_name.lower()
 
-    if metric_name == 'sharperatio':
+    if metric_name == 'sharpe_ratio':
         return optimizer_analytics.sharpe_ratio(backtest_result.log_returns, frequency)
-    elif metric_name == 'sortinoratio':
-        return None #optimizer_analytics.sortino_ratio(backtest_result.log_returns)
     else:
-    	pass
-        # ex.AttributeError.message('ERROR: Unknown objective function %s' % (metric_name))
+        raise NotImplementedError("The optimizer metric %s is not supported." % metric)

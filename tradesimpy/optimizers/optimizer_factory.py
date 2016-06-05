@@ -12,4 +12,4 @@ def create_optimizer(num_processors, optimizer_name, trading_algorithm, commissi
             optimization_metric_ascending=optimization_metric_ascending, optimization_parameters=optimization_parameters,
             frequency=frequency)
     else:
-        ex.AttributeError.message('ERROR: Unknown optimizer name %s' % (optimizer_name))
+        raise NotImplementedError("Unknown optimizer name %s" % (optimizer_name))

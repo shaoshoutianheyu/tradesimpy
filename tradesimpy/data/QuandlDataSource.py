@@ -30,7 +30,8 @@ class QuandlDataSource(DataSource):
 	    # Discover data needed for analysis process, especially for history windows
 		for column_name, series in raw_data.iteritems():
 			ticker_name, series_name = self.column_name_to_ticker_series_name(column_name)
-			data_dict[ticker_name][series_name] = self.trim_series_observations(series, ticker, series_name, start_date, end_date, history_window)
+			data_dict[ticker_name][series_name] = self.trim_series_observations(series, ticker, \
+				series_name, start_date, end_date, history_window)
 
 		# Save data as dictionary of data frames
 		data = {}

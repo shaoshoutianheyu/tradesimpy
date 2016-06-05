@@ -17,7 +17,7 @@ class WalkForwardAnalyzer(object):
 
     def run(self, data, start_date, end_date, cash):
         if(cash <= 0):
-            raise AttributeError("Cash must be greater than zero.")
+            raise ValueError("Cash must be greater than zero.")
 
         # Create in- and out-of-sample periods for optimization and backtesting
         sample_periods = self.create_sample_periods(data, start_date, end_date, self.in_sample_periods, \
@@ -107,7 +107,7 @@ class WalkForwardAnalyzer(object):
             # Make sure observation counts between different frames match
             if(downsampled_date_count != 0):
                 if(downsampled_date_count != downsampled_dates_per_frame[name].size):
-                    ex.AttributeError.message('ERROR: The number of observations after downsampling between frames must match.')
+                    raise ValueError('The number of observations after downsampling between frames must match.')
             else:
                 downsampled_date_count = downsampled_dates_per_frame[name].size
 
@@ -142,7 +142,7 @@ class WalkForwardAnalyzer(object):
         # elif(sample_period == "yearly"):
         #     return "1Y"
         else:
-            ex.AttributeError.message('ERROR: The sample period %s is not supported.' % (sample_period))
+            raise NotImplementedError('The sample period %s is not supported.' % (sample_period))
 
     def sample_period_to_downsample_rule(self, sample_period):
         sample_period = sample_period.lower()
@@ -158,4 +158,4 @@ class WalkForwardAnalyzer(object):
         # elif(sample_period == "yearly"):
         #     return "1Y"
         else:
-            ex.AttributeError.message('ERROR: The sample period %s is not supported.' % (sample_period))
+            raise NotImplementedError('The sample period %s is not supported.' % (sample_period))

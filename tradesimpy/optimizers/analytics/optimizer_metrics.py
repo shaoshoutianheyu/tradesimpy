@@ -21,7 +21,7 @@ def annualization_factor(frequency):
     elif(frequency == 'yearly'):
         return 1
     else:
-        return 0
+        raise NotImplementedError("The frequency %s is not supported." % frequency)
 
 def sharpe_ratio(return_series, frequency):
     factor = annualization_factor(frequency)

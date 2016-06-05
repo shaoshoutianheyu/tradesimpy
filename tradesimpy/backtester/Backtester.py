@@ -30,7 +30,7 @@ class Backtester(object):
             self.cash = 10000
 
         if(self.cash <= 0):
-            raise AttributeError("Cash must be greater than zero.")
+            raise ValueError("Cash must be greater than zero.")
 
         # Find the tradable dates so as to include enough data to accommodate for history window
         dates = []
@@ -158,4 +158,4 @@ class Backtester(object):
         elif position_percent is not None:
             return m.floor((leftover_cash / share_price) * position_percent)
         else:
-            ex.AttributeError.message('ERROR: Both share_count and position_percent were None.')
+            raise ValueError('Both share_count and position_percent were None.')

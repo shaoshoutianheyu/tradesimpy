@@ -28,7 +28,7 @@
     
     "num_processors"                    : 8,
     "optimizer_name"                    : "GridSearchOptimizer",
-    "optimization_metric"               : "SharpeRatio",
+    "optimization_metric"               : "sharpe_ratio",
     "optimization_metric_ascending"     : "true",
     "optimization_parameters"           : {
                                             "ma_long_window"    : [10, 20, 2],

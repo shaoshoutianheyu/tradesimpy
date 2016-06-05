@@ -29,6 +29,7 @@ class DataSource(object):
 
 		# Trim all time series
 		for column_name, series in frame.iteritems():
-			trimmed_data[column_name] = self.trim_series_observations(series, ticker, column_name, start_date, end_date, history_window)
+			trimmed_data[column_name] = self.trim_series_observations(series, ticker, column_name, \
+				start_date, end_date, history_window)
 
 		return pd.DataFrame(trimmed_data)

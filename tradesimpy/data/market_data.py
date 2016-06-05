@@ -10,7 +10,7 @@ from datetime import datetime
 def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, history_window, csv_data_uri=None):
     # Check for unique tickers
     if(len(tickers) != len(list(set(tickers)))):
-        raise AttributeError("There are non-unique tickers set for loading.")
+        raise ValueError("There are non-unique tickers set for loading.")
 
     # Create the unique data sources
     unique_data_sources = dsf.create_data_sources(data_sources, csv_data_uri)
@@ -27,18 +27,18 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
 
         # Check if data request failed for all tickers
         if(not group_data):
-            raise AttributeError("The data request failed for all tickers from data source %s" % key)
+            raise ValueError("The data request failed for all tickers from data source %s" % key)
 
         # Check if data request failed for certain tickers
         for ticker in group['tickers']:
             if(ticker not in group_data.keys()):
-                raise AttributeError("The data request failed for ticker %s from data source %s" % (ticker, key))
+                raise ValueError("The data request failed for ticker %s from data source %s" % (ticker, key))
 
         # Check for issues in data
         for ticker_name, series in group_data.iteritems():
             # Check for equal tickers but with different data sources
             if(ticker_name in data.keys()):
-                raise AttributeError("There is more than one of the same ticker name loaded: %s" % ticker_name)
+                raise ValueError("There is more than one of the same ticker name loaded: %s" % ticker_name)
 
             # Check for proper date ranges in data
             if(series.index[history_window-1] > start_date):

@@ -16,7 +16,8 @@ class TradeDecisions(object):
 		elif(open_or_close == 'close'):
 			self.add_close(ticker, share_count, position_percent)
 		else:
-			raise AttributeError("The TradeDecision parameter open_or_close must be set to either 'open' or 'close': %s" % open_or_close)
+			raise ValueError("The TradeDecision parameter open_or_close must be set to either 'open' or 'close': %s" \
+				% open_or_close)
 
 	def add_open(self, ticker, long_or_short=None, share_count=None, position_percent=None):
 		self.open.append(TradeDecision(ticker, 'open', long_or_short, share_count, position_percent))

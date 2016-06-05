@@ -5,7 +5,7 @@ from WalkForwardAnalysisEngine import WalkForwardAnalysisEngine
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        raise AttributeError('Please provide valid parameters {[configuration file]}')
+        raise StandardError('Please provide valid parameters {[configuration file]}')
 
     args = sys.argv[1:]
     config_uri = args[0]
