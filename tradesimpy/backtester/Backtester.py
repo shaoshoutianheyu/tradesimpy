@@ -2,6 +2,7 @@ import math as m
 import numpy as np
 import pandas as pd
 import exceptions as ex
+import logging as log
 from BacktestResults import BacktestResults
 from TradeDecision import TradeDecision
 from TradeDecisions import TradeDecisions
@@ -35,8 +36,9 @@ class Backtester(object):
         # Find the tradable dates so as to include enough data to accommodate for history window
         dates = []
         for ticker in self.trading_algorithm.tickers:
-            # TODO: Log what date each ticker will be able to begin trading properly
-            dates.extend(self.data[ticker].index[self.trading_algorithm.history_window:])
+            ticker_dates = self.data[ticker].index[self.trading_algorithm.history_window:]
+            dates.extend(ticker_dates)
+            log.info("Ticker %s will begin making trade decisions on %s" % (ticker, ticker_dates[0]))
         dates = list(set(dates))
 
         # Intialize daily results structures
@@ -78,8 +80,8 @@ class Backtester(object):
                 # Only include data for those tickers which can trade TODAY (i.e., existing present observation)
                 if(date in self.data[ticker].index):
                     algorithm_data[ticker] = self.data[ticker][:date][-algo_window_length-1:-1]
-                
-                # TODO: Log the tickers which cannot be traded today
+                else:
+                    log.warning("Date %s is not tradable for ticker %s" % (date, ticker))
 
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[date]
@@ -125,7 +127,7 @@ class Backtester(object):
 
             # Prior to purchase, be sure enough cash is available for purchase
             if((share_price * total_share_count) > self.cash_amount[date]):
-                # TODO: Log warning about not enough available cash to purchase shares
+                log.warning("Cash amount %f is not enough to purchase shares at date %s" % (self.cash_amount[date], date))
                 return None
 
             # Open position

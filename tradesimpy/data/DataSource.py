@@ -20,7 +20,7 @@ class DataSource(object):
 		start_period = series[:start].sort_index(ascending=False)
 		hist_start_date = start_period.index[history_window].to_datetime()
 
-		log.info("Trimmed time series %s.%s from %s to %s" % (ticker, series_name, hist_start_date, end_date))
+		log.info("Trimmed time series %s.%s: (%s - %s)" % (ticker, series_name, hist_start_date, end_date))
 
 		return series[hist_start_date:end_date]
 
