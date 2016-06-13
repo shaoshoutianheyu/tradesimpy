@@ -4,7 +4,8 @@ import sys
 # Provide directory paths for necessary imports
 lib_paths =\
     [
-        os.path.abspath('../'),
+        os.path.abspath('../tradesimpy/'),
+        os.path.abspath('../tradesimpy/data/'),
     ]
 
 for lib_path in lib_paths:
