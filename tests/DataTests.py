@@ -2,6 +2,7 @@ from tests_import import *
 import pandas as pd
 import unittest
 import data_source_factory as dsf
+import market_data
 from DataSource import DataSource
 from QuandlDataSource import QuandlDataSource
 from CSVDataSource import CSVDataSource
@@ -122,6 +123,101 @@ class DataTests(unittest.TestCase):
         # Check results
         self.assertEqual(trimed_series.index[0], self.test_series.index[0])
         self.assertEqual(trimed_series.index[-1], self.test_series.index[-1])
+
+    def test_load_market_data_from_all_data_sources(self):
+        # Setup input values for all data sources
+        tickers = [
+            'INDEX_SPY',
+            'SPY',
+        ]
+        ticker_types = [
+            'YAHOO',
+            'dummy',
+        ]
+        data_sources = [
+            'Quandl',
+            'CSV',
+        ]
+        start_date = pd.to_datetime('2015-12-01')
+        end_date = pd.to_datetime('2016-01-29')
+        history_window = 0
+        csv_data_uri = '.'
+
+        # Load market data
+        data = market_data.load_market_data(tickers, ticker_types, data_sources, start_date, end_date, history_window, csv_data_uri)
+
+        # Check results
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data['INDEX_SPY'].index[0], start_date)
+        self.assertEqual(data['INDEX_SPY'].index[-1], end_date)
+        self.assertEqual(data['SPY'].index[0], start_date)
+        self.assertEqual(data['SPY'].index[-1], end_date)
+
+    def test_load_market_data_with_out_of_range_dates(self):
+        # Setup input values for all data sources
+        tickers = [
+            'SPY',
+        ]
+        ticker_types = [
+            'dummy',
+        ]
+        data_sources = [
+            'CSV',
+        ]
+        start_date = pd.to_datetime('1987-08-27')
+        end_date = pd.to_datetime('1989-02-17')
+        history_window = 0
+        csv_data_uri = '.'
+
+        # Load market data
+        with self.assertRaises(ValueError):
+            data = market_data.load_market_data(tickers, ticker_types, data_sources, start_date, \
+                end_date, history_window, csv_data_uri)
+
+    def test_load_market_data_with_non_existent_data(self):
+        # Setup input values for all data sources
+        tickers = [
+            'DAX',
+        ]
+        ticker_types = [
+            'dummy',
+        ]
+        data_sources = [
+            'CSV',
+        ]
+        start_date = pd.to_datetime('1987-08-27')
+        end_date = pd.to_datetime('1989-02-17')
+        history_window = 0
+        csv_data_uri = '.'
+
+        # Load market data
+        with self.assertRaises(ValueError):
+            data = market_data.load_market_data(tickers, ticker_types, data_sources, start_date, \
+                end_date, history_window, csv_data_uri)
+
+    def test_load_market_data_with_same_ticker(self):
+        # Setup input values for all data sources
+        tickers = [
+            'SPY',
+            'SPY',
+        ]
+        ticker_types = [
+            'dummy',
+            'dummy',
+        ]
+        data_sources = [
+            'CSV',
+            'CSV',
+        ]
+        start_date = pd.to_datetime('2015-12-01')
+        end_date = pd.to_datetime('2016-01-29')
+        history_window = 0
+        csv_data_uri = '.'
+
+        # Load market data
+        with self.assertRaises(ValueError):
+            data = market_data.load_market_data(tickers, ticker_types, data_sources, start_date, \
+                end_date, history_window, csv_data_uri)
 
 if __name__ == '__main__':
     unittest.main()

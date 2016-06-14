@@ -31,7 +31,7 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
 
         # Check if data request failed for certain tickers
         for ticker in group['tickers']:
-            if(ticker not in group_data.keys()):
+            if(group_data[ticker].empty):
                 raise ValueError("The data request failed for ticker %s from data source %s" % (ticker, key))
 
         # Check for issues in data
@@ -41,10 +41,17 @@ def load_market_data(tickers, ticker_types, data_sources, start_date, end_date, 
                 raise ValueError("There is more than one of the same ticker name loaded: %s" % ticker_name)
 
             # Check for proper date ranges in data
-            if(series.index[history_window-1] > start_date):
-                log.warning("The data for ticker %s has a start date greater than %s: %s" % (key, start_date, series.index[0]))
+            if(history_window > 0):
+                if(series.index[history_window-1] > start_date):
+                    log.warning("The data (with history window) for ticker %s has a start date greater than %s: %s" \
+                        % (ticker_name, start_date, series.index[history_window-1]))
+            else:
+                if(series.index[0] > start_date):
+                    log.warning("The data for ticker %s has a start date greater than %s: %s" \
+                        % (ticker_name, start_date, series.index[0]))
             if(series.index[-1] < end_date):
-                log.warning("The data for ticker %s has a end date less than %s: %s" % (key, end_date, series.index[-1]))
+                log.warning("The data for ticker %s has a end date less than %s: %s" \
+                    % (ticker_name, end_date, series.index[-1]))
 
         data.update(group_data)
 
