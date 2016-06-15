@@ -1,0 +1,43 @@
+{
+    "results_uri"                       : "/home/grant/Development/Trading/tradesimpy",
+    "algorithm_uri"                     : "/home/grant/Development/Trading/tradesimpy/examples/moving_avg_divergence_algorithm/MovingAverageDivergenceAlgorithm.py",
+    "csv_data_uri"                      : "/home/grant/Development/Trading/tradesimpy/data",
+    "log_uri"                           : "/home/grant/Development/Trading/tradesimpy",
+    
+    "start_date"                        : "2013-01-01",
+    "end_date"                          : "2015-12-15",
+    "time_resolution"                   : "daily",
+    "tickers"                           : [
+                                            "INDEX_SPY"
+                                          ],
+    "ticker_types"                      : [
+                                            "YAHOO"
+                                          ],
+    "ticker_series_names"               : [
+                                            "Adjusted Close"
+                                          ],
+    "data_sources"                      : [
+                                            "Quandl"
+                                          ],
+    "ticker_spreads"                    : [
+                                            0.0001
+                                          ],
+    "commission"                        : 0.0,
+    "history_window"                    : 20,
+    "cash"                              : 10000,
+    
+    "num_processors"                    : 8,
+    "optimizer_name"                    : "GridSearchOptimizer",
+    "optimization_metric"               : "sharpe_ratio",
+    "optimization_metric_ascending"     : "true",
+    "optimization_parameters"           : {
+                                            "ma_long_window"    : [10, 20, 2],
+                                            "ma_short_window"   : [2, 5, 2],
+                                            "open_long"         : [-0.25, -0.25, 1],
+                                            "close_long"        : [0.4, 0.4, 1]
+                                          },
+
+    "in_sample_periods"                 : 24,
+    "out_of_sample_periods"             : 6,
+    "sample_period"                     : "monthly"
+}

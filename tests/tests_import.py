@@ -6,6 +6,7 @@ lib_paths =\
     [
         os.path.abspath('../tradesimpy/'),
         os.path.abspath('../tradesimpy/data/'),
+        os.path.abspath('../tradesimpy/configurations/'),
     ]
 
 for lib_path in lib_paths:

@@ -1,6 +1,6 @@
 from tests_import import *
-import pandas as pd
 import unittest
+import pandas as pd
 import data_source_factory as dsf
 import market_data
 from DataSource import DataSource
@@ -141,7 +141,7 @@ class DataTests(unittest.TestCase):
         start_date = pd.to_datetime('2015-12-01')
         end_date = pd.to_datetime('2016-01-29')
         history_window = 0
-        csv_data_uri = '.'
+        csv_data_uri = './support_files'
 
         # Load market data
         data = market_data.load_market_data(tickers, ticker_types, data_sources, start_date, end_date, history_window, csv_data_uri)
@@ -167,7 +167,7 @@ class DataTests(unittest.TestCase):
         start_date = pd.to_datetime('1987-08-27')
         end_date = pd.to_datetime('1989-02-17')
         history_window = 0
-        csv_data_uri = '.'
+        csv_data_uri = './support_files'
 
         # Load market data
         with self.assertRaises(ValueError):
@@ -188,7 +188,7 @@ class DataTests(unittest.TestCase):
         start_date = pd.to_datetime('1987-08-27')
         end_date = pd.to_datetime('1989-02-17')
         history_window = 0
-        csv_data_uri = '.'
+        csv_data_uri = './support_files'
 
         # Load market data
         with self.assertRaises(ValueError):
@@ -212,7 +212,7 @@ class DataTests(unittest.TestCase):
         start_date = pd.to_datetime('2015-12-01')
         end_date = pd.to_datetime('2016-01-29')
         history_window = 0
-        csv_data_uri = '.'
+        csv_data_uri = './support_files'
 
         # Load market data
         with self.assertRaises(ValueError):
