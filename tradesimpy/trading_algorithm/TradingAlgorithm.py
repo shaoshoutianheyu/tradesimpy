@@ -5,16 +5,16 @@ import inspect
 
 class TradingAlgorithm(object):
 
-    def __init__(self, tickers, history_window, params):
+    def __init__(self, tickers, history_window, parameters):
         # Data members
         self.tickers = tickers
         self.history_window = history_window
-        self.params = params
+        self.parameters = parameters
 
-        # Initialize to no current open positions
-        self.position_is_open = {}
-        for ticker in self.tickers:
-            self.position_is_open[ticker] = False
+        # # Initialize to no current open positions
+        # self.position_is_open = {}
+        # for ticker in self.tickers:
+        #     self.position_is_open[ticker] = False
 
     def set_parameters(self, parameters):
     	self.parameters = parameters
