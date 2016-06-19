@@ -11,10 +11,10 @@ class TradingAlgorithm(object):
         self.history_window = history_window
         self.parameters = parameters
 
-        # # Initialize to no current open positions
-        # self.position_is_open = {}
-        # for ticker in self.tickers:
-        #     self.position_is_open[ticker] = False
+        # Initialize to no current open positions
+        self.position_is_open = {}
+        for ticker in self.tickers:
+            self.position_is_open[ticker] = False
 
     def set_parameters(self, parameters):
     	self.parameters = parameters

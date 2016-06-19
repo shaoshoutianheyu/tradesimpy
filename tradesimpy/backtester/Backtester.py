@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import exceptions as ex
 import logging as log
+from pprint import pprint
 from BacktestResults import BacktestResults
 from TradeDecision import TradeDecision
 from TradeDecisions import TradeDecisions
@@ -39,7 +40,7 @@ class Backtester(object):
             ticker_dates = self.data[ticker].index[self.trading_algorithm.history_window:]
             datetimes.extend(ticker_dates)
             log.info("Ticker %s will begin making trade decisions on %s" % (ticker, ticker_dates[0]))
-        datetimes = list(set(datetimes))
+        datetimes = sorted(list(set(datetimes)))
 
         # Intialize daily results structures
         self.portfolio_value = {}
@@ -79,13 +80,16 @@ class Backtester(object):
             for ticker in self.trading_algorithm.tickers:
                 # Only include data for those tickers which can trade TODAY (i.e., existing present observation)
                 if(current_datetime in self.data[ticker].index):
-                    algorithm_data[ticker] = self.data[ticker][:current_datetime][-algo_window_length-1:-1]
+                    algorithm_data[ticker] = self.data[ticker][:current_datetime][-algo_window_length-1:]
                 else:
                     log.warning("Date %s is not tradable for ticker %s" % (current_datetime, ticker))
 
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[current_datetime]
             self.prev_invested_amount = self.invested_amount[current_datetime]
+
+            # pprint(algorithm_data)
+            # exit(0)
 
             # Determine trade decisions for tomorrow's open
             self.trade_decision = self.trading_algorithm.trade_decision(algorithm_data)
