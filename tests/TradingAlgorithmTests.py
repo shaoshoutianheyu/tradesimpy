@@ -3,6 +3,7 @@ import unittest
 import sys
 from TradingAlgorithm import TradingAlgorithm
 from TradeDecision import TradeDecision
+from TradeDecisions import TradeDecisions
 
 
 class TradingAlgorithmTests(unittest.TestCase):
@@ -30,7 +31,6 @@ class TradingAlgorithmTests(unittest.TestCase):
 	# 	# 	trading_algorithm = TradingAlgorithm.create_trading_algorithm(algorithm_uri, [], 0)
 
 	def test_trade_decision_with_correct_share_count(self):
-		# __init__(self, ticker, open_or_close, long_or_short=None, share_count=None, position_percent=None):
 		trade_decision = TradeDecision([], 'open', 'long', 100, None)
 
 		# Check results
@@ -73,6 +73,25 @@ class TradingAlgorithmTests(unittest.TestCase):
 	def test_trade_decision_correct_open_and_incorrect_long_or_short(self):
 		with self.assertRaises(ValueError):
 			trade_decision = TradeDecision([], 'open', 'invalid', 100, None)
+
+	def test_trade_decisions_add_open(self):
+		trade_decisions = TradeDecisions()
+		trade_decisions.add_open('SPY', 'long', 100, None)
+
+		# Check results
+		self.assertEquals(len(trade_decisions.open), 1)
+
+	def test_trade_decisions_add_close(self):
+		trade_decisions = TradeDecisions()
+		trade_decisions.add_close('SPY', 100, None)
+
+		# Check results
+		self.assertEquals(len(trade_decisions.close), 1)
+
+	def test_trade_decisions_add_invalid_value(self):
+		trade_decisions = TradeDecisions()
+		with self.assertRaises(ValueError):
+			trade_decisions.add('SPY', 'not_open_or_close', 'short', 100, None)
 
 if __name__ == '__main__':
     unittest.main()
