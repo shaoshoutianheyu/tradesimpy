@@ -1,2 +1,2 @@
 # TradeSimPy
-A simple algorithmic trading analysis framework for backtesting, optimization, and walk forward analysis.
+A simple algorithmic trading strategy analysis library for backtesting, hyperparameter optimization, and walk forward analysis.
