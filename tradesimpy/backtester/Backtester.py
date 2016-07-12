@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import exceptions as ex
 import logging as log
-from pprint import pprint
 from BacktestResults import BacktestResults
 from TradeDecision import TradeDecision
 from TradeDecisions import TradeDecisions
@@ -87,9 +86,6 @@ class Backtester(object):
             # Remember current asset amounts for next iteration
             self.prev_cash_amount = self.cash_amount[current_datetime]
             self.prev_invested_amount = self.invested_amount[current_datetime]
-
-            # pprint(algorithm_data)
-            # exit(0)
 
             # Determine trade decisions for tomorrow's open
             self.trade_decision = self.trading_algorithm.trade_decision(algorithm_data)
