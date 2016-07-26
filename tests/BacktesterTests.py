@@ -89,7 +89,7 @@ class BacktesterTests(unittest.TestCase):
 			backtester = Backtester(0, trading_algorithm, cash, commission, ticker_spreads)
 			backtester.run(data, start_date, end_date)
 
-	def test_backtester_with_multiple_ticker(self):
+	def test_backtester_with_multiple_tickers(self):
 		# Initialize market data loading values
 		tickers = ['SPY', 'BND']
 		ticker_types = ['', '']
@@ -121,7 +121,7 @@ class BacktesterTests(unittest.TestCase):
 		# Initialize backtester values
 		cash = 10000
 		commission = 0.0
-		ticker_spreads = [0.0001]
+		ticker_spreads = [0.0001, 0.0001]
 
 		# Setup and run the backtester
 		backtester = Backtester(0, trading_algorithm, cash, commission, ticker_spreads)

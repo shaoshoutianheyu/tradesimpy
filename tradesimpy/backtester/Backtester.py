@@ -128,11 +128,11 @@ class Backtester(object):
             total_share_count = self._determine_share_count(self.cash_amount[current_datetime], share_price, \
                 trade_decision.share_count, trade_decision.position_percent)
 
-            # Prior to purchase, be sure enough cash is available for purchase
+            # Prior to purchase, be sure enough cash is available
             if((share_price * total_share_count) > self.cash_amount[current_datetime]):
                 log.warning("Cash amount %f is not enough to purchase shares at date-time %s" \
                     % (self.cash_amount[current_datetime], current_datetime))
-                return None
+                return
 
             # Open position
             self.open_share_price[ticker] = share_price
