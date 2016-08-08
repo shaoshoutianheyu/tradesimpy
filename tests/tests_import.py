@@ -9,6 +9,7 @@ lib_paths =\
         os.path.abspath('../tradesimpy/engines/'),
         os.path.abspath('../tradesimpy/backtester/'),
         os.path.abspath('../tradesimpy/optimizers/'),
+        os.path.abspath('../tradesimpy/optimizers/analytics/'),
         os.path.abspath('../tradesimpy/walk_forward_analyzer/'),
         os.path.abspath('../tradesimpy/configurations/'),
         os.path.abspath('../tradesimpy/trading_algorithm/'),

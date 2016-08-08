@@ -5,7 +5,7 @@ def discrete_returns(price_series):
     return price_series / price_series.shift(1) - 1
 
 def log_returns(price_series):
-    return price_series.log() - price_series.log()
+    return np.log(price_series) - np.log(price_series.shift(1))
 
 def annualization_factor(frequency):
     frequency = frequency.lower()
@@ -26,4 +26,9 @@ def annualization_factor(frequency):
 def sharpe_ratio(return_series, frequency):
     factor = annualization_factor(frequency)
 
-    return np.sqrt(factor) * return_series.mean() / return_series.std()
+    return np.sqrt(factor) * (return_series.mean() / return_series.std())
+
+def sortino_ratio(return_series, frequency):
+    factor = annualization_factor(frequency)
+
+    return np.sqrt(factor) * (return_series.mean() / return_series[return_series < 0].std())
