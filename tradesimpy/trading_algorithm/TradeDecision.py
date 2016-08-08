@@ -13,7 +13,7 @@ class TradeDecision(object):
 		else:
 			raise ValueError("You must provide either a share count or position percent in TradeDecision")
 
-		# Make trade decision has proper open/close positions
+		# Make sure trade decision has proper open/close positions
 		self.long_or_short = None
 		self.open_or_close = open_or_close.lower()
 		if(self.open_or_close == 'open'):

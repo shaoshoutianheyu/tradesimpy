@@ -65,14 +65,12 @@ class Backtester(object):
 
             if(not self.trade_decision.is_empty):
                 # Execute sales first to be sure cash is available for potential purchases
-                if(self.trade_decision.close):
-                    # Close positions
-                    for trade_decision in self.trade_decision.close:
-                        self._execute_transaction(current_datetime, trade_decision)
-                if(self.trade_decision.open):
-                    # Open positions
-                    for trade_decision in self.trade_decision.open:
-                        self._execute_transaction(current_datetime, trade_decision)
+                # Close positions
+                for trade_decision in self.trade_decision.close:
+                    self._execute_transaction(current_datetime, trade_decision)
+                # Open positions
+                for trade_decision in self.trade_decision.open:
+                    self._execute_transaction(current_datetime, trade_decision)
 
             # Retrieve data needed for algorithm
             algorithm_data = {}
@@ -112,7 +110,9 @@ class Backtester(object):
         if trade_decision.open_or_close == 'close':
             # Be sure there are purchased shares for the close request
             if(ticker in self.purchased_shares):
-                # TODO: Allow user to sell portions of position, currently closes entire position
+                # TODO: Allow user to sell portions of position, currently closes entire position.
+                #       Should know number of shares currently owned per ticker before closing.
+                #       Don't execute if number of shares owned doesn't equal those wishing to be closed.
                 share_price = (1 - self.ticker_spreads[ticker_idx] / 2) * self.data[ticker].loc[current_datetime, 'Open']
                 self.cash_amount[current_datetime] = self.prev_cash_amount + (self.purchased_shares[ticker] * share_price) \
                     - self.commission
