@@ -4,7 +4,7 @@ import unittest
 
 class WalkForwardAnalyzerTests(unittest.TestCase):
     def test_walk_forward_analyzer(self):
-        pass
+		self.assertTrue(False, 'Not implemented!')
 
 if __name__ == '__main__':
     unittest.main()

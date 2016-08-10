@@ -23,12 +23,13 @@ class TradingAlgorithmTests(unittest.TestCase):
 		with self.assertRaises(NameError):
 			trading_algorithm = TradingAlgorithm.create_trading_algorithm(algorithm_uri, [], 0)
 
-	# def test_create_trading_algorithm_incorrect_class(self):
-	# 	raise NotImplementedError('This test needs work.')
-	# 	# algorithm_uri = './support_files/MagicAlgorithm.py'
+	def test_create_trading_algorithm_incorrect_class(self):
+		self.assertTrue(False, 'Not implemented!')
+		
+		algorithm_uri = './support_files/MagicAlgorithm.py'
 
-	# 	# with self.assertRaises(TypeError):
-	# 	# 	trading_algorithm = TradingAlgorithm.create_trading_algorithm(algorithm_uri, [], 0)
+		with self.assertRaises(TypeError):
+			trading_algorithm = TradingAlgorithm.create_trading_algorithm(algorithm_uri, [], 0)
 
 	def test_trade_decision_with_correct_share_count(self):
 		trade_decision = TradeDecision([], 'open', 'long', 100, None)

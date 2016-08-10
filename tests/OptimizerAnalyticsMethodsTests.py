@@ -36,16 +36,16 @@ class OptimizerAnalyticsMethodsTests(unittest.TestCase):
 		self.assertAlmostEqual(0.5831621098, sortino_ratio, places=8)
 
 	def test_mar_ratio_analytics_method(self):
-		pass
+		self.assertTrue(False, 'Not implemented!')
 
 	def test_max_drawdown_analytics_method(self):
-		pass
+		self.assertTrue(False, 'Not implemented!')
 
 	def test_var_analytics_method(self):
-		pass
+		self.assertTrue(False, 'Not implemented!')
 
 	def test_cvar_analytics_method(self):
-		pass
+		self.assertTrue(False, 'Not implemented!')
 
 if __name__ == '__main__':
     unittest.main()

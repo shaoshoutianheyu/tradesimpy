@@ -60,5 +60,25 @@ class OptimizerTests(unittest.TestCase):
 		self.assertTrue(len(results.backtest_results) == len(results.parameter_sets))
 		self.assertEqual(4, len(results.backtest_results))
 
+	def test_parameter_space_discretization(self):
+		optimization_parameters = {
+			"ma_long_window"    : [10, 10, 1],
+			"ma_short_window"   : [2, 5, 1],
+			"open_long"         : [-0.25, -0.25, 1],
+			"close_long"        : [0.4, 0.4, 1]
+		}
+		dis_params = GridSearchOptimizer.get_param_sets(optimization_parameters)
+		self.assertEqual(1, len(dis_params))
+
+		optimization_parameters = {
+			"ma_long_window"    : [10, 20, 2],
+			"ma_short_window"   : [2, 5, 2],
+			"open_long"         : [-0.75, -0.25, 3],
+			"close_long"        : [0.1, 0.8, 8
+			]
+		}
+		dis_params = GridSearchOptimizer.get_param_sets(optimization_parameters)
+		self.assertEqual(96, len(dis_params))
+
 if __name__ == '__main__':
     unittest.main()
